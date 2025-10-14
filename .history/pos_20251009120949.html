@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi Chicken Brothers - POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Styles for Print */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        
+        .receipt-text {
+             font-family: 'monospace';
+        }
+
+        /* Resizable Columns */
+        .resizable-columns {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .resizable-column {
+            position: relative;
+            overflow: hidden;
+            min-width: 200px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background: transparent;
+            cursor: col-resize;
+            z-index: 10;
+            transition: background-color 0.2s;
+        }
+
+        .resize-handle:hover,
+        .resize-handle.resizing {
+            background-color: #3b82f6;
+        }
+
+        .resize-handle-left {
+            left: -4px;
+        }
+
+        .resize-handle-right {
+            right: -4px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .resizable-columns {
+                flex-direction: column;
+            }
+            
+            .resizable-column {
+                min-width: 100%;
+                height: auto;
+            }
+            
+            .resize-handle {
+                display: none;
+            }
+        }
+
+        /* Ensure content remains usable */
+        .column-content {
+            height: 100%;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .menu-item {
+            min-height: 80px;
+        }
+
+        .order-item {
+            min-width: 200px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="resizable-columns">
+        <!-- Menu Items Section -->
+        <div class="resizable-column bg-white" style="flex: 2; min-width: 300px;">
+            <div class="column-content">
+                <header class="mb-4 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">Delhi Chicken Brothers</h1>
+                        <p class="text-gray-500">Select items to start an order</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="open-coupons-btn" title="Coupon Management" class="text-gray-500 hover:text-green-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                        </button>
+                        <button id="open-inventory-btn" title="Inventory Management" class="text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </button>
+                        <button id="open-menu-management-btn" title="Menu Management" class="text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+                <div class="mb-4">
+                    <input type="text" id="search-input" placeholder="Search for items..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div id="menu-container" class="menu-grid">
+                    <!-- Menu items will be dynamically inserted here -->
+                </div>
+            </div>
+            <div class="resize-handle resize-handle-right"></div>
+        </div>
+
+        <!-- Current Order Section (Middle Column) -->
+        <div class="resizable-column bg-white" style="flex: 2; min-width: 300px;">
+            <div class="column-content">
+                <h2 class="text-2xl font-bold border-b pb-4 mb-4">Current Order</h2>
+                <div id="order-items-container" class="flex-grow overflow-y-auto">
+                    <!-- Selected items will be listed here -->
+                    <p id="empty-order-message" class="text-gray-500 text-center mt-10">Your order is empty.</p>
+                </div>
+            </div>
+            <div class="resize-handle resize-handle-left"></div>
+            <div class="resize-handle resize-handle-right"></div>
+        </div>
+
+        <!-- Order Summary Section (Right Column) -->
+        <div class="resizable-column bg-white" style="flex: 1; min-width: 250px;">
+            <div class="column-content">
+                <div class="mt-4">
+                    <div id="note-display-container" class="hidden bg-yellow-100 border border-yellow-300 text-yellow-800 p-2 rounded-md mb-2">
+                        <p class="font-semibold text-sm">Note:</p>
+                        <p id="order-note-text" class="text-sm"></p>
+                    </div>
+                     <button id="add-note-btn" class="w-full text-sm text-blue-600 hover:text-blue-800 mb-4 rounded-md p-2 bg-blue-50 hover:bg-blue-100 transition-colors">Add Note for Kitchen</button>
+                </div>
+                
+                <!-- Customer Assignment -->
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Customer Assignment</h3>
+                    <div id="customer-search-section" class="space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="customer-search-input" placeholder="Search by mobile number..." class="flex-1 p-2 border border-gray-300 rounded-md text-sm">
+                            <button id="search-customer-btn" class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700">Search</button>
+                        </div>
+                        <div id="customer-results" class="hidden space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                            <!-- Customer results will appear here -->
+                        </div>
+                        <div id="selected-customer" class="hidden bg-green-50 border border-green-200 rounded-md p-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold text-green-800" id="selected-customer-name"></p>
+                                    <p class="text-sm text-green-600" id="selected-customer-mobile"></p>
+                                </div>
+                                <button id="remove-customer-btn" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals -->
+                <div class="border-t pt-4 mt-4 space-y-2 text-lg">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span id="subtotal" class="font-semibold">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">GST (5% included)</span>
+                        <span id="gst" class="font-medium text-gray-500">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-2xl text-blue-600">
+                        <span>Grand Total</span>
+                        <span id="grand-total">₹0.00</span>
+                    </div>
+                </div>
+
+                <!-- Order Type -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold mb-2">Order Type</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="flex items-center justify-center p-3 border rounded-lg flex-1 cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="order-type" value="Dine-in" class="h-4 w-4 text-blue-600" checked>
+                            <span class="ml-2 text-gray-700 font-medium text-sm">Dine-in</span>
+                        </label>
+                        <label class="flex items-center justify-center p-3 border rounded-lg flex-1 cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="order-type" value="Takeaway" class="h-4 w-4 text-blue-600">
+                            <span class="ml-2 text-gray-700 font-medium text-sm">Takeaway</span>
+                        </label>
+                        <label class="flex items-center justify-center p-3 border rounded-lg flex-1 cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="order-type" value="Delivery" class="h-4 w-4 text-blue-600">
+                            <span class="ml-2 text-gray-700 font-medium text-sm">Delivery</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Payment Mode -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold mb-2">Mode of Payment</h3>
+                    <div class="flex gap-4">
+                        <label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="payment-mode" value="Cash" class="h-5 w-5 text-blue-600" checked>
+                            <span class="ml-3 text-gray-700 font-medium">Cash</span>
+                        </label>
+                        <label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="payment-mode" value="UPI" class="h-5 w-5 text-blue-600">
+                            <span class="ml-3 text-gray-700 font-medium">UPI</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <button id="clear-order-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-transform">Clear</button>
+                    <button id="finalize-order-btn" class="w-full bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 transition-transform disabled:bg-gray-400 disabled:cursor-not-allowed">Finalize Bill</button>
+                </div>
+            </div>
+            <div class="resize-handle resize-handle-left"></div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-10">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4">Add a Note</h3>
+            <textarea id="note-input" class="w-full border rounded-md p-2 h-28" placeholder="e.g., Make it extra spicy..."></textarea>
+            <div class="flex justify-end gap-4 mt-4">
+                <button id="cancel-note-btn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">Cancel</button>
+                <button id="save-note-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg">Save Note</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Print Modal -->
+    <div id="print-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-10">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <h3 class="text-2xl font-bold mb-2">Order Finalized!</h3>
+            <p class="text-lg font-semibold mb-6 bg-blue-100 text-blue-800 rounded-md py-2" id="final-order-number"></p>
+            <p class="mb-6 text-gray-600">What would you like to print?</p>
+            <div class="space-y-4">
+                <button id="print-receipt-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700">Print Customer Receipt</button>
+                <button id="print-kot-btn" class="w-full bg-gray-700 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-800">Print KOT</button>
+            </div>
+             <button id="close-print-modal-btn" class="mt-8 text-gray-500 hover:text-gray-700">Close</button>
+        </div>
+    </div>
+
+    <!-- Menu Management Modal -->
+    <div id="menu-management-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden z-20">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Menu Management</h2>
+                <button id="close-menu-management-btn" class="text-gray-500 hover:text-red-600 text-3xl">&times;</button>
+            </header>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <div class="flex justify-end mb-4">
+                    <button id="add-new-item-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Add New Item</button>
+                </div>
+                <div id="menu-list-container" class="space-y-4">
+                    <!-- Menu items for management will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Add/Edit Modal -->
+    <div id="item-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <h3 id="item-modal-title" class="text-xl font-semibold mb-4">Add New Item</h3>
+            <form id="item-edit-form">
+                <input type="hidden" id="original-item-name">
+                <input type="hidden" id="original-item-category">
+                <div class="mb-4">
+                    <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
+                    <input type="text" id="item-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+                </div>
+                <div class="mb-4">
+                    <label for="item-category" class="block text-sm font-medium text-gray-700">Category</label>
+                    <input type="text" id="item-category" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required list="category-list">
+                    <datalist id="category-list"></datalist>
+                </div>
+                <div class="mb-4">
+                    <label for="item-description" class="block text-sm font-medium text-gray-700">Item Description</label>
+                    <textarea id="item-description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" rows="3" placeholder="A short description for the menu page..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="item-image" class="block text-sm font-medium text-gray-700">Image Link</label>
+                    <input type="url" id="item-image" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" placeholder="https://example.com/image.jpg">
+                    <img id="item-image-preview" src="" alt="Image Preview" class="mt-2 rounded-md max-h-32 hidden"/>
+                </div>
+                <div id="price-variants-container" class="space-y-2 mb-4">
+                    <h4 class="text-md font-medium text-gray-800">Price Variants</h4>
+                    <!-- Dynamic price variants will be injected here -->
+                </div>
+                <button type="button" id="add-price-variant-btn" class="text-sm text-blue-600 hover:underline mb-6">+ Add another variant</button>
+                
+                <div class="flex justify-end gap-4 mt-4">
+                    <button type="button" id="cancel-item-edit-btn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" id="save-item-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Inventory Management Modal -->
+    <div id="inventory-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden z-20">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Inventory Management</h2>
+                <button id="close-inventory-btn" class="text-gray-500 hover:text-red-600 text-3xl">&times;</button>
+            </header>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <div class="flex justify-end mb-4">
+                    <button id="add-new-ingredient-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Add New Ingredient</button>
+                </div>
+                <div id="inventory-list-container" class="space-y-2">
+                    <!-- Inventory items will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ingredient Add/Edit Modal -->
+    <div id="ingredient-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+            <h3 id="ingredient-modal-title" class="text-xl font-semibold mb-4">Add New Ingredient</h3>
+            <form id="ingredient-edit-form">
+                <input type="hidden" id="original-ingredient-name">
+                <div class="mb-4">
+                    <label for="ingredient-name" class="block text-sm font-medium text-gray-700">Ingredient Name</label>
+                    <input type="text" id="ingredient-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="ingredient-stock" class="block text-sm font-medium text-gray-700">Current Stock</label>
+                        <input type="number" id="ingredient-stock" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required min="0" step="any">
+                    </div>
+                    <div>
+                        <label for="ingredient-unit" class="block text-sm font-medium text-gray-700">Unit</label>
+                        <input type="text" id="ingredient-unit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required placeholder="e.g., g, kg, pcs, l, ml">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4 mt-4">
+                    <button type="button" id="cancel-ingredient-edit-btn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg">Save Ingredient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recipe Builder Modal -->
+    <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[90vh] flex flex-col">
+            <header class="p-4 border-b">
+                <h2 class="text-2xl font-bold">Recipe Builder</h2>
+                <p id="recipe-item-name" class="text-gray-600"></p>
+            </header>
+            <div id="recipe-variants-container" class="p-6 flex-grow overflow-y-auto space-y-6">
+                <!-- Recipe variant sections will be injected here -->
+            </div>
+            <footer class="p-4 border-t flex justify-end gap-4">
+                <button type="button" id="close-recipe-modal-btn" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">Close</button>
+                <button type="button" id="save-recipe-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg">Save Recipe</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Coupon Management Modal -->
+    <div id="coupon-management-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden z-20">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Coupon Management</h2>
+                <button id="close-coupon-management-btn" class="text-gray-500 hover:text-red-600 text-3xl">&times;</button>
+            </header>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <div class="flex justify-end mb-4">
+                    <button id="add-new-coupon-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Create New Coupon</button>
+                </div>
+                <div id="coupon-list-container" class="space-y-4">
+                    <!-- Coupons will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coupon Add/Edit Modal -->
+    <div id="coupon-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 id="coupon-modal-title" class="text-xl font-semibold mb-4">Create New Coupon</h3>
+            <form id="coupon-edit-form">
+                <input type="hidden" id="original-coupon-id">
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="coupon-code" class="block text-sm font-medium text-gray-700">Coupon Code *</label>
+                        <input type="text" id="coupon-code" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required placeholder="e.g., WELCOME10">
+                    </div>
+                    <div>
+                        <label for="coupon-name" class="block text-sm font-medium text-gray-700">Coupon Name *</label>
+                        <input type="text" id="coupon-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required placeholder="e.g., Welcome Discount">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="coupon-description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="coupon-description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" rows="2" placeholder="Describe the coupon..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="discount-type" class="block text-sm font-medium text-gray-700">Discount Type *</label>
+                        <select id="discount-type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required>
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed_amount">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="discount-value" class="block text-sm font-medium text-gray-700">Discount Value *</label>
+                        <input type="number" id="discount-value" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required min="0" step="0.01" placeholder="e.g., 10">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="minimum-order-amount" class="block text-sm font-medium text-gray-700">Minimum Order Amount</label>
+                        <input type="number" id="minimum-order-amount" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" min="0" step="0.01" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="maximum-discount-amount" class="block text-sm font-medium text-gray-700">Max Discount Amount</label>
+                        <input type="number" id="maximum-discount-amount" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" min="0" step="0.01" placeholder="No limit">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+    ];
+
+    let menu = {};
+    let inventory = [];
+    let currentOrder = [];
+    let orderNote = '';
+    let allCategories = [];
+    let selectedCustomer = null;
+
+    // --- DOM Element Cache ---
+    const menuContainer = document.getElementById('menu-container');
+    const orderItemsContainer = document.getElementById('order-items-container');
+    const emptyOrderMessage = document.getElementById('empty-order-message');
+    const subtotalEl = document.getElementById('subtotal');
+    const gstEl = document.getElementById('gst');
+    const grandTotalEl = document.getElementById('grand-total');
+    const finalizeBtn = document.getElementById('finalize-order-btn');
+    const clearBtn = document.getElementById('clear-order-btn');
+    const addNoteBtn = document.getElementById('add-note-btn');
+    const noteModal = document.getElementById('note-modal');
+    const noteInput = document.getElementById('note-input');
+    const saveNoteBtn = document.getElementById('save-note-btn');
+    const cancelNoteBtn = document.getElementById('cancel-note-btn');
+    const noteDisplayContainer = document.getElementById('note-display-container');
+    const orderNoteText = document.getElementById('order-note-text');
+    const printModal = document.getElementById('print-modal');
+    const searchInput = document.getElementById('search-input');
+    
+    // Customer Assignment Elements
+    const customerSearchInput = document.getElementById('customer-search-input');
+    const searchCustomerBtn = document.getElementById('search-customer-btn');
+    const customerResults = document.getElementById('customer-results');
+    const selectedCustomerDiv = document.getElementById('selected-customer');
+    const selectedCustomerName = document.getElementById('selected-customer-name');
+    const selectedCustomerMobile = document.getElementById('selected-customer-mobile');
+    const removeCustomerBtn = document.getElementById('remove-customer-btn');
+    
+    // Menu Management Elements
+    const openMenuManagementBtn = document.getElementById('open-menu-management-btn');
+    const menuManagementModal = document.getElementById('menu-management-modal');
+    const closeMenuManagementBtn = document.getElementById('close-menu-management-btn');
+    const menuListContainer = document.getElementById('menu-list-container');
+    const addNewItemBtn = document.getElementById('add-new-item-btn');
+    const itemEditModal = document.getElementById('item-edit-modal');
+    const itemEditForm = document.getElementById('item-edit-form');
+    const cancelItemEditBtn = document.getElementById('cancel-item-edit-btn');
+    const itemModalTitle = document.getElementById('item-modal-title');
+    const priceVariantsContainer = document.getElementById('price-variants-container');
+    const addPriceVariantBtn = document.getElementById('add-price-variant-btn');
+    const itemImageInput = document.getElementById('item-image');
+    const itemImagePreview = document.getElementById('item-image-preview');
+
+    // Inventory Management Elements
+    const openInventoryBtn = document.getElementById('open-inventory-btn');
+    const inventoryModal = document.getElementById('inventory-modal');
+    const closeInventoryBtn = document.getElementById('close-inventory-btn');
+    const inventoryListContainer = document.getElementById('inventory-list-container');
+    const addNewIngredientBtn = document.getElementById('add-new-ingredient-btn');
+    const ingredientEditModal = document.getElementById('ingredient-edit-modal');
+    const ingredientEditForm = document.getElementById('ingredient-edit-form');
+    const ingredientModalTitle = document.getElementById('ingredient-modal-title');
+    const cancelIngredientEditBtn = document.getElementById('cancel-ingredient-edit-btn');
+    
+    // Recipe Builder Elements
+    const recipeModal = document.getElementById('recipe-modal');
+    const closeRecipeModalBtn = document.getElementById('close-recipe-modal-btn');
+    const saveRecipeBtn = document.getElementById('save-recipe-btn');
+    const recipeItemName = document.getElementById('recipe-item-name');
+    const recipeVariantsContainer = document.getElementById('recipe-variants-container');
+
+
+    // --- Data Persistence (Supabase) ---
+    async function loadDataFromSupabase() {
+        await fetchMenuFromSupabase();
+        // Inventory can still be from local storage or also moved to Supabase if needed
+        const savedInventory = localStorage.getItem('dcbInventory');
+        inventory = savedInventory ? JSON.parse(savedInventory) : JSON.parse(JSON.stringify(defaultInventory));
+        saveInventoryToStorage();
+    }
+
+    function saveInventoryToStorage() {
+        localStorage.setItem('dcbInventory', JSON.stringify(inventory));
+    }
+
+    async function fetchMenuFromSupabase() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('menu_items')
+                .select(`
+                    id,
+                    name,
+                    category,
+                    prices,
+                    recipe,
+                    image_url,
+                    description
+                `)
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+
+            // Reset and process data
+            menu = {};
+            allCategories = [];
+            const categorySet = new Set();
+
+            data.forEach(item => {
+                if (!menu[item.category]) {
+                    menu[item.category] = [];
+                }
+                
+                menu[item.category].push({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description || '',
+                    imageUrl: item.image_url, // Include image_url from database
+                    prices: item.prices || {},
+                    recipe: item.recipe || {},
+                    // Variants can be derived from prices if needed, but are not directly fetched
+                    variants: Object.keys(item.prices || {}).map(name => ({ name, price: item.prices[name] }))
+                });
+                categorySet.add(item.category);
+            });
+            allCategories = [...categorySet].sort();
+            renderMenu();
+        } catch (err) {
+            console.error("Error fetching menu:", err);
+            alert("Could not load menu from the database.");
+        }
+    }
+
+
+    // --- Menu Rendering ---
+    function formatVariant(variant) {
+        const lowerVariant = variant.toLowerCase();
+        if (lowerVariant === 'half') {
+            return `<span class="text-blue-600 font-semibold">${variant}</span>`;
+        }
+        if (lowerVariant === 'full') {
+            return `<span class="text-green-700 font-semibold">${variant}</span>`;
+        }
+        return variant;
+    }
+
+    function renderMenu(searchTerm = '') {
+        menuContainer.innerHTML = '';
+        let itemsFound = false;
+        const sortedCategories = Object.keys(menu).sort();
+
+        for (const category of sortedCategories) {
+            const filteredItems = menu[category].filter(item => 
+                !searchTerm || item.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredItems.length === 0) continue;
+
+            itemsFound = true;
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'col-span-full mb-4 mt-2';
+            categoryDiv.innerHTML = `<h3 class="text-xl font-bold text-gray-700 border-b-2 border-blue-500 pb-2">${category}</h3>`;
+            menuContainer.appendChild(categoryDiv);
+
+            filteredItems.forEach(item => {
+                for (const variant in item.prices) {
+                    const price = item.prices[variant];
+                    const button = document.createElement('button');
+                    button.className = 'bg-white p-3 rounded-lg shadow hover:shadow-lg hover:bg-blue-50 transition-all text-left';
+                    button.innerHTML = `
+                        <p class="font-semibold text-gray-800">${item.name}</p>
+                        <p class="text-sm text-gray-500">${formatVariant(variant)}</p>
+                        <p class="text-lg font-bold mt-2 text-blue-600">₹${price.toFixed(2)}</p>
+                    `;
+                    button.addEventListener('click', () => addItemToOrder(item.name, variant, price));
+                    menuContainer.appendChild(button);
+                }
+            });
+        }
+        if (!itemsFound) {
+             menuContainer.innerHTML = `<p class="col-span-full text-center text-gray-500 mt-8">No items match your search.</p>`;
+        }
+    }
+
+    // --- Order Logic ---
+    function addItemToOrder(name, variant, price) {
+        const uniqueId = `${name}-${variant}`;
+        const existingItem = currentOrder.find(item => item.id === uniqueId);
+        if (existingItem) {
+            existingItem.qty++;
+        } else {
+            currentOrder.push({ id: uniqueId, name, variant, price, qty: 1 });
+        }
+        renderOrder();
+    }
+
+    function updateItemQuantity(id, change) {
+        const item = currentOrder.find(item => item.id === id);
+        if (item) {
+            item.qty += change;
+            if (item.qty <= 0) {
+                currentOrder = currentOrder.filter(item => item.id !== id);
+            }
+        }
+        renderOrder();
+    }
+
+    function renderOrder() {
+        orderItemsContainer.innerHTML = '';
+        if (currentOrder.length === 0) {
+            orderItemsContainer.appendChild(emptyOrderMessage);
+            emptyOrderMessage.classList.remove('hidden');
+        } else {
+            emptyOrderMessage.classList.add('hidden');
+            currentOrder.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex items-center justify-between py-3 border-b';
+                itemDiv.innerHTML = `
+                    <div class="flex-grow">
+                        <p class="font-semibold">${item.name} <span class="text-sm text-gray-500 font-normal">(${item.variant})</span></p>
+                        <p class="text-gray-600">₹${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="quantity-change bg-gray-200 rounded-full w-7 h-7 font-bold text-lg" data-id="${item.id}" data-change="-1">-</button>
+                        <span class="w-8 text-center font-semibold text-lg">${item.qty}</span>
+                        <button class="quantity-change bg-gray-200 rounded-full w-7 h-7 font-bold text-lg" data-id="${item.id}" data-change="1">+</button>
+                    </div>
+                    <p class="w-20 text-right font-bold text-lg">₹${(item.qty * item.price).toFixed(2)}</p>
+                `;
+                orderItemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        document.querySelectorAll('.quantity-change').forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.dataset.id;
+                const change = parseInt(button.dataset.change);
+                updateItemQuantity(id, change);
+            });
+        });
+
+        calculateTotals();
+        updateFinalizeButtonState();
+    }
+    
+    function calculateTotals() {
+        const grandTotal = currentOrder.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const gstAmount = grandTotal - (grandTotal / 1.05);
+
+        subtotalEl.textContent = `₹${grandTotal.toFixed(2)}`;
+        gstEl.textContent = `₹${gstAmount.toFixed(2)}`;
+        grandTotalEl.textContent = `₹${grandTotal.toFixed(2)}`;
+    }
+    
+    function updateFinalizeButtonState() {
+        finalizeBtn.disabled = currentOrder.length === 0;
+    }
+    
+    function clearOrder() {
+        currentOrder = [];
+        orderNote = '';
+        noteInput.value = '';
+        noteDisplayContainer.classList.add('hidden');
+        renderOrder();
+    }
+
+    // --- Note Logic ---
+    addNoteBtn.addEventListener('click', () => noteModal.classList.remove('hidden'));
+    cancelNoteBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
+    saveNoteBtn.addEventListener('click', () => {
+        orderNote = noteInput.value.trim();
+        if(orderNote) {
+            orderNoteText.innerText = orderNote;
+            noteDisplayContainer.classList.remove('hidden');
+        } else {
+            noteDisplayContainer.classList.add('hidden');
+        }
+        noteModal.classList.add('hidden');
+    });
+
+    // --- Customer Assignment Logic ---
+    searchCustomerBtn.addEventListener('click', searchCustomers);
+    customerSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchCustomers();
+        }
+    });
+    removeCustomerBtn.addEventListener('click', removeSelectedCustomer);
+
+    async function searchCustomers() {
+        const searchTerm = customerSearchInput.value.trim();
+        if (!searchTerm) {
+            alert('Please enter a mobile number to search');
+            return;
+        }
+
+        try {
+            // Search customers by mobile number
+            const { data: customers, error } = await supabaseClient
+                .from('customers')
+                .select('user_id, first_name, last_name, mobile_number, email')
+                .ilike('mobile_number', `%${searchTerm}%`)
+                .limit(5);
+
+            if (error) throw error;
+
+            customerResults.innerHTML = '';
+            
+            if (customers && customers.length > 0) {
+                customers.forEach(customer => {
+                    const customerDiv = document.createElement('div');
+                    customerDiv.className = 'p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer';
+                    customerDiv.innerHTML = `
+                        <p class="font-medium">${customer.first_name} ${customer.last_name || ''}</p>
+                        <p class="text-sm text-gray-600">${customer.mobile_number}</p>
+                        ${customer.email ? `<p class="text-xs text-gray-500">${customer.email}</p>` : ''}
+                    `;
+                    customerDiv.addEventListener('click', () => selectCustomer(customer));
+                    customerResults.appendChild(customerDiv);
+                });
+                customerResults.classList.remove('hidden');
+            } else {
+                customerResults.innerHTML = '<p class="text-center text-gray-500 text-sm">No customers found</p>';
+                customerResults.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error searching customers:', error);
+            alert('Error searching customers: ' + error.message);
+        }
+    }
+
+    function selectCustomer(customer) {
+        selectedCustomer = customer;
+        selectedCustomerName.textContent = `${customer.first_name} ${customer.last_name || ''}`;
+        selectedCustomerMobile.textContent = customer.mobile_number;
+        selectedCustomerDiv.classList.remove('hidden');
+        customerResults.classList.add('hidden');
+        customerSearchInput.value = '';
+    }
+
+    function removeSelectedCustomer() {
+        selectedCustomer = null;
+        selectedCustomerDiv.classList.add('hidden');
+    }
+
+    function clearOrder() {
+        currentOrder = [];
+        orderNote = '';
+        noteInput.value = '';
+        noteDisplayContainer.classList.add('hidden');
+        removeSelectedCustomer();
+        renderOrder();
+    }
+
+    // --- Order Finalization and Printing ---
+    clearBtn.addEventListener('click', clearOrder);
+    finalizeBtn.addEventListener('click', finalizeOrder);
+    searchInput.addEventListener('input', () => renderMenu(searchInput.value));
+
+    // Generate order number based on timestamp
+    function getOrderNumber() {
+        const now = new Date();
+        const timestamp = now.getTime();
+        return Math.floor(timestamp / 1000); // Use seconds since epoch as order number
+    }
+    
+    async function finalizeOrder() {
+        try {
+            // 1. Deduct from inventory
+            currentOrder.forEach(orderItem => {
+                const menuItem = Object.values(menu).flat().find(m => m.name === orderItem.name);
+                if (menuItem && menuItem.recipe && menuItem.recipe[orderItem.variant]) {
+                    const recipeForVariant = menuItem.recipe[orderItem.variant];
+                    recipeForVariant.forEach(recipeIngredient => {
+                        const inventoryItem = inventory.find(i => i.name === recipeIngredient.ingredient);
+                        if (inventoryItem) {
+                            inventoryItem.stock -= recipeIngredient.quantity * orderItem.qty;
+                        }
+                    });
+                }
+            });
+            saveInventoryToStorage();
+
+            // 2. Save order to Supabase database
+            const orderNumber = getOrderNumber();
+            const paymentMode = document.querySelector('input[name="payment-mode"]:checked').value;
+            const orderType = document.querySelector('input[name="order-type"]:checked').value;
+            const grandTotal = currentOrder.reduce((acc, item) => acc + (item.price * item.qty), 0);
+
+                    // Insert main order record with customer assignment if selected
+                    const orderData = {
+                        grand_total: grandTotal,
+                        payment_mode: paymentMode,
+                        order_type: orderType,
+                        note: orderNote,
+                        status: 'Pending' // Set initial status as Pending (with capital P to match enum)
+                    };
+                    
+                    // Add customer_id if a customer is selected
+                    if (selectedCustomer) {
+                        orderData.customer_id = selectedCustomer.user_id;
+                    }
+
+                    const { data: order, error: orderError } = await supabaseClient
+                        .from('orders')
+                        .insert([orderData])
+                        .select()
+                        .single();
+
+            if (orderError) {
+                throw new Error(`Failed to save order: ${orderError.message}`);
+            }
+
+            // Insert order items
+            const orderItems = currentOrder.map(item => ({
+                order_id: order.id,
+                item_name: item.name,
+                variant: item.variant,
+                quantity: item.qty,
+                price_per_unit: item.price
+            }));
+
+            const { error: itemsError } = await supabaseClient
+                .from('order_items')
+                .insert(orderItems);
+
+            if (itemsError) {
+                throw new Error(`Failed to save order items: ${itemsError.message}`);
+            }
+
+            // 3. Prepare for printing
+            document.getElementById('final-order-number').textContent = `Order #${order.id}`;
+            prepareReceipt(order.id, paymentMode, orderType);
+            prepareKOT(order.id, paymentMode, orderType);
+            printModal.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Error finalizing order:', error);
+            alert(`Error finalizing order: ${error.message}. Please try again.`);
+        }
+    }
+
+    // --- Printing Logic (Functions unchanged) ---
+    function formatDateTime() { /* ... */ }
+    function generatePrintHeader(orderNumber, paymentMode) { /* ... */ }
+    function prepareReceipt(orderNumber, paymentMode) { /* ... */ }
+    function prepareKOT(orderNumber, paymentMode) { /* ... */ }
+    // (Re-pasting the full printing functions for completeness as they are large)
+    function formatDateTime() {
+        const now = new Date();
+        const date = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
+        const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return { date, time };
+    }
+
+    function generatePrintHeader(orderNumber, paymentMode, orderType) {
+        const { date, time } = formatDateTime();
+        return `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h3 style="font-size: 24px; font-weight: bold; margin: 0;">${KIOSK_INFO.name}</h3>
+                <p style="margin: 2px 0;">${KIOSK_INFO.address}</p>
+                <p style="margin: 2px 0;">Phone: ${KIOSK_INFO.phone}</p>
+                <p style="margin: 2px 0;">GSTIN: ${KIOSK_INFO.gst}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Date: ${date}</span>
+                <span>Time: ${time}</span>
+            </div>
+             <p style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 16px;">Payment Mode: ${paymentMode.toUpperCase()}</p>
+            <h1 style="text-align: center; font-size: 48px; font-weight: bold; margin: 10px 0; border: 2px solid #000; padding: 5px;">
+                ORDER #${orderNumber}
+            </h1>
+            <h2 style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 24px;">${(orderType || '').toUpperCase()}</h2>
+        `;
+    }
+
+    function prepareReceipt(orderNumber, paymentMode, orderType) {
+        const grandTotal = currentOrder.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const gstAmount = grandTotal - (grandTotal / 1.05);
+        const taxableValue = grandTotal / 1.05;
+
+        let itemsHtml = `<table style="width: 100%; border-collapse: collapse;"><thead><tr><th style="text-align: left; border-bottom: 1px solid #000; padding-bottom: 5px;">Item</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Qty</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Price</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Amount</th></tr></thead><tbody>`;
+        currentOrder.forEach(item => {
+            itemsHtml += `<tr><td>${item.name} (${item.variant})</td><td style="text-align: right;">${item.qty}</td><td style="text-align: right;">${item.price.toFixed(2)}</td><td style="text-align: right;">${(item.qty * item.price).toFixed(2)}</td></tr>`;
+        });
+        itemsHtml += '</tbody></table>';
+
+        const receiptHtml = `<div style="width: 300px; margin: 0 auto; padding: 20px;">${generatePrintHeader(orderNumber, paymentMode, orderType)}<h4 style="text-align:center; margin-bottom: 10px; font-size: 18px; border-bottom: 1px dashed #000; padding-bottom: 5px;">Customer Receipt</h4>${itemsHtml}<hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;"><div style="margin-top: 20px;"><p style="display: flex; justify-content: space-between;"><span>Taxable Value:</span> <span>₹${taxableValue.toFixed(2)}</span></p><p style="display: flex; justify-content: space-between;"><span>CGST @ 2.5%:</span> <span>₹${(gstAmount / 2).toFixed(2)}</span></p><p style="display: flex; justify-content: space-between;"><span>SGST @ 2.5%:</span> <span>₹${(gstAmount / 2).toFixed(2)}</span></p><hr style="border: none; border-top: 1px solid #000; margin: 10px 0;"><p style="display: flex; justify-content: space-between; font-weight: bold; font-size: 22px;"><span>GRAND TOTAL:</span> <span>₹${grandTotal.toFixed(2)}</span></p></div><p style="text-align: center; margin-top: 20px;">Thank you for your visit!</p></div>`;
+        document.getElementById('receipt-print-area').innerHTML = receiptHtml;
+    }
+    
+    function prepareKOT(orderNumber, paymentMode, orderType) {
+        let itemsHtml = '<div style="margin-top: 20px; font-size: 20px;">';
+        currentOrder.forEach(item => {
+            itemsHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #000;"><span style="font-weight: bold; font-size: 24px;">${item.qty} x</span><span style="flex-grow: 1; margin-left: 15px;">${item.name} (${item.variant})</span></div>`;
+        });
+        itemsHtml += '</div>';
+
+        const noteHtml = orderNote ? `<div style="margin-top: 20px; border: 2px solid #000; padding: 10px; font-weight: bold; font-size: 18px;">NOTE: ${orderNote}</div>` : '';
+        const kotHtml = `<div style="width: 300px; margin: 0 auto; padding: 20px;">${generatePrintHeader(orderNumber, paymentMode, orderType)}<h4 style="text-align:center; font-size: 22px; margin-bottom: 15px;">Kitchen Order Ticket (KOT)</h4>${itemsHtml}${noteHtml}</div>`;
+        document.getElementById('kot-print-area').innerHTML = kotHtml;
+    }
+    
+    document.getElementById('print-receipt-btn').addEventListener('click', () => {
+        const receiptArea = document.getElementById('receipt-print-area');
+        receiptArea.classList.remove('hidden');
+        window.print();
+        receiptArea.classList.add('hidden');
+    });
+    
+    document.getElementById('print-kot-btn').addEventListener('click', () => {
+        const kotArea = document.getElementById('kot-print-area');
+        kotArea.classList.remove('hidden');
+        window.print();
+        kotArea.classList.add('hidden');
+    });
+    
+    document.getElementById('close-print-modal-btn').addEventListener('click', () => {
+        printModal.classList.add('hidden');
+        clearOrder(); // Clear order after printing is done
+    });
+
+
+    // --- Menu Management ---
+    function renderMenuManagementList() {
+        menuListContainer.innerHTML = '';
+        const categoryList = document.getElementById('category-list');
+        categoryList.innerHTML = '';
+        const categories = Object.keys(menu).sort();
+
+        categories.forEach(category => {
+            const categoryHeader = document.createElement('h3');
+            categoryHeader.className = 'text-lg font-semibold text-gray-600 bg-gray-100 p-2 rounded-md';
+            categoryHeader.textContent = category;
+            menuListContainer.appendChild(categoryHeader);
+
+            const catOption = document.createElement('option');
+            catOption.value = category;
+            categoryList.appendChild(catOption);
+
+            menu[category].forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center p-3 border rounded-md';
+                
+                let pricesText = Object.entries(item.prices).map(([variant, price]) => `${variant}: ₹${price}`).join(', ');
+
+                itemDiv.innerHTML = `
+                    <img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/ffffff?text=No+Image'}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md mr-4">
+                    <div class="flex-grow">
+                        <p class="font-semibold">${item.name}</p>
+                        <p class="text-sm text-gray-500">${pricesText}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="recipe-item-btn text-purple-600 hover:text-purple-800 p-2" data-category="${category}" data-name="${item.name}">Recipe</button>
+                        <button class="edit-item-btn text-blue-600 hover:text-blue-800 p-2" data-id="${item.id}" data-category="${category}" data-name="${item.name}">Edit</button>
+                        <button class="delete-item-btn text-red-600 hover:text-red-800 p-2" data-id="${item.id}" data-name="${item.name}">Delete</button>
+                    </div>
+                `;
+                menuListContainer.appendChild(itemDiv);
+            });
+        });
+
+        document.querySelectorAll('.recipe-item-btn').forEach(btn => btn.addEventListener('click', handleRecipeItemClick));
+        document.querySelectorAll('.edit-item-btn').forEach(btn => btn.addEventListener('click', handleEditItemClick));
+        document.querySelectorAll('.delete-item-btn').forEach(btn => btn.addEventListener('click', handleDeleteItemClick));
+    }
+    function handleEditItemClick(e) { /* ... */ }
+    function handleDeleteItemClick(e) { /* ... */ }
+    function openItemEditModal(item, category) { /* ... */ }
+    function addPriceVariantInput(variant, price) { /* ... */ }
+    // (Re-pasting the full menu management functions)
+    function handleEditItemClick(e) {
+        const itemId = e.currentTarget.dataset.id;
+        const category = e.currentTarget.dataset.category;
+        const item = menu[category].find(i => i.id == itemId);
+        openItemEditModal(item, category);
+    }
+
+    async function handleDeleteItemClick(e) {
+        const itemId = e.currentTarget.dataset.id;
+        const name = e.currentTarget.dataset.name;
+        if (confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+            try {
+                // Delete the menu item directly (variants are stored in the prices JSONB column)
+                const { error: itemError } = await supabaseClient
+                    .from('menu_items')
+                    .delete()
+                    .eq('id', itemId);
+                if (itemError) throw itemError;
+
+                // Refresh the menu from the database
+                await fetchMenuFromSupabase();
+                renderMenuManagementList();
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                alert(`Failed to delete item: ${error.message}`);
+            }
+        }
+    }
+    function openItemEditModal(item = null, category = '') {
+        itemEditForm.reset();
+        priceVariantsContainer.innerHTML = '';
+        itemImagePreview.classList.add('hidden');
+        itemImagePreview.src = '';
+        itemImageInput.value = ''; // Clear file input
+
+        if (item) {
+            itemModalTitle.textContent = 'Edit Menu Item';
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = category;
+            document.getElementById('item-description').value = item.description || '';
+            // Use a hidden input to store the item ID for updates
+            document.getElementById('original-item-name').value = item.id; 
+            
+            if (item.imageUrl) {
+                itemImageInput.value = item.imageUrl; // Set the image URL in the input field
+                itemImagePreview.src = item.imageUrl;
+                itemImagePreview.classList.remove('hidden');
+            }
+
+            for(const variant in item.prices) {
+                addPriceVariantInput(variant, item.prices[variant]);
+            }
+        } else {
+            itemModalTitle.textContent = 'Add New Item';
+            document.getElementById('original-item-name').value = ''; // Clear ID
+            addPriceVariantInput(); // Add one empty variant field to start
+        }
+        itemEditModal.classList.remove('hidden');
+    }
+    function addPriceVariantInput(variant = '', price = '') {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `<input type="text" placeholder="Variant (e.g., Half)" value="${variant}" class="variant-name mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required><input type="number" placeholder="Price" value="${price}" class="variant-price mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required min="0" step="0.01"><button type="button" class="remove-variant-btn text-red-500 p-2 text-2xl">&times;</button>`;
+        priceVariantsContainer.appendChild(div);
+        div.querySelector('.remove-variant-btn').addEventListener('click', () => div.remove());
+    }
+    addPriceVariantBtn.addEventListener('click', () => addPriceVariantInput());
+
+    itemImageInput.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        if (url) {
+            itemImagePreview.src = url;
+            itemImagePreview.classList.remove('hidden');
+        } else {
+            itemImagePreview.classList.add('hidden');
+        }
+    });
+
+    itemEditForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const saveBtn = document.getElementById('save-item-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const itemName = document.getElementById('item-name').value.trim();
+            const itemCategory = document.getElementById('item-category').value.trim();
+            const itemDescription = document.getElementById('item-description').value.trim();
+            const itemId = document.getElementById('original-item-name').value; // Now stores ID
+            
+            if (!itemName || !itemCategory) throw new Error("Item Name and Category are required.");
+
+            // Build prices object from variants
+            const prices = {};
+            const variantInputs = priceVariantsContainer.querySelectorAll('.flex');
+            variantInputs.forEach(div => {
+                const name = div.querySelector('.variant-name').value.trim();
+                const price = parseFloat(div.querySelector('.variant-price').value);
+                if (name && !isNaN(price)) {
+                    prices[name] = price;
+                }
+            });
+
+            if (Object.keys(prices).length === 0) throw new Error("Please add at least one valid price variant.");
+
+            // 1. Handle Image URL
+            const imageUrl = itemImageInput.value.trim() || null;
+
+            // 2. Upsert Item with prices in JSONB column
+            const itemData = {
+                name: itemName,
+                category: itemCategory,
+                prices: prices,
+                image_url: imageUrl,
+                description: itemDescription
+            };
+
+            if (itemId) { // Update existing item
+                const { data: updatedItem, error: itemError } = await supabaseClient
+                    .from('menu_items')
+                    .update(itemData)
+                    .eq('id', itemId)
+                    .select()
+                    .single();
+                
+                if (itemError) throw itemError;
+
+            } else { // Insert new item
+                const { data: newItem, error: itemError } = await supabaseClient
+                    .from('menu_items')
+                    .insert(itemData)
+                    .select()
+                    .single();
+
+                if (itemError) throw itemError;
+            }
+
+            // 3. Refresh UI
+            await fetchMenuFromSupabase();
+            renderMenuManagementList();
+            itemEditModal.classList.add('hidden');
+
+        } catch (error) {
+            console.error("Error saving item:", error);
+            alert(`Failed to save item: ${error.message}`);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Item';
+        }
+    });
+    openMenuManagementBtn.addEventListener('click', () => { renderMenuManagementList(); menuManagementModal.classList.remove('hidden'); });
+    closeMenuManagementBtn.addEventListener('click', () => menuManagementModal.classList.add('hidden'));
+    addNewItemBtn.addEventListener('click', () => openItemEditModal());
+    cancelItemEditBtn.addEventListener('click', () => itemEditModal.classList.add('hidden'));
+
+
+    // --- Inventory Management ---
+    function renderInventoryList() {
+        inventoryListContainer.innerHTML = '';
+        inventory.sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'grid grid-cols-4 gap-4 items-center p-2 border-b';
+            itemDiv.innerHTML = `
+                <span class="font-semibold col-span-2">${item.name}</span>
+                <span>${item.stock} ${item.unit}</span>
+                <div class="flex gap-2 justify-end">
+                    <button class="edit-ingredient-btn text-blue-600 hover:text-blue-800 p-2" data-name="${item.name}">Edit</button>
+                    <button class="delete-ingredient-btn text-red-600 hover:text-red-800 p-2" data-name="${item.name}">Delete</button>
+                </div>
+            `;
+            inventoryListContainer.appendChild(itemDiv);
+        });
+        document.querySelectorAll('.edit-ingredient-btn').forEach(btn => btn.addEventListener('click', handleEditIngredientClick));
+        document.querySelectorAll('.delete-ingredient-btn').forEach(btn => btn.addEventListener('click', handleDeleteIngredientClick));
+    }
+    function handleEditIngredientClick(e) {
+        const name = e.currentTarget.dataset.name;
+        const item = inventory.find(i => i.name === name);
+        openIngredientEditModal(item);
+    }
+    function handleDeleteIngredientClick(e) {
+        const name = e.currentTarget.dataset.name;
+        if (confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+            inventory = inventory.filter(i => i.name !== name);
+            // Also remove from all recipes
+            Object.values(menu).flat().forEach(menuItem => {
+                if(menuItem.recipe) {
+                    Object.keys(menuItem.recipe).forEach(variant => {
+                        menuItem.recipe[variant] = menuItem.recipe[variant].filter(ing => ing.ingredient !== name);
+                    });
+                }
+            });
+            saveInventoryToStorage();
+            saveMenuToStorage();
+            renderInventoryList();
+        }
+    }
+    function openIngredientEditModal(item = null) {
+        ingredientEditForm.reset();
+        if (item) {
+            ingredientModalTitle.textContent = 'Edit Ingredient';
+            document.getElementById('ingredient-name').value = item.name;
+            document.getElementById('ingredient-name').readOnly = true;
+            document.getElementById('original-ingredient-name').value = item.name;
+            document.getElementById('ingredient-stock').value = item.stock;
+            document.getElementById('ingredient-unit').value = item.unit;
+        } else {
+            ingredientModalTitle.textContent = 'Add New Ingredient';
+            document.getElementById('ingredient-name').readOnly = false;
+            document.getElementById('original-ingredient-name').value = '';
+        }
+        ingredientEditModal.classList.remove('hidden');
+    }
+    ingredientEditForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('ingredient-name').value.trim();
+        const stock = parseFloat(document.getElementById('ingredient-stock').value);
+        const unit = document.getElementById('ingredient-unit').value.trim();
+        const originalName = document.getElementById('original-ingredient-name').value;
+
+        if (!name || isNaN(stock) || !unit) return;
+
+        if (originalName) { // Editing existing
+            const item = inventory.find(i => i.name === originalName);
+            if(item) {
+                item.stock = stock;
+                item.unit = unit;
+            }
+        } else { // Adding new
+            if (inventory.some(i => i.name.toLowerCase() === name.toLowerCase())) {
+                alert('An ingredient with this name already exists.');
+                return;
+            }
+            inventory.push({ name, stock, unit });
+        }
+        saveInventoryToStorage();
+        renderInventoryList();
+        ingredientEditModal.classList.add('hidden');
+    });
+    openInventoryBtn.addEventListener('click', () => { renderInventoryList(); inventoryModal.classList.remove('hidden'); });
+    closeInventoryBtn.addEventListener('click', () => inventoryModal.classList.add('hidden'));
+    addNewIngredientBtn.addEventListener('click', () => openIngredientEditModal());
+    cancelIngredientEditBtn.addEventListener('click', () => ingredientEditModal.classList.add('hidden'));
+
+    // --- Recipe Management ---
+    function handleRecipeItemClick(e) {
+        const category = e.currentTarget.dataset.category;
+        const name = e.currentTarget.dataset.name;
+        const item = menu[category].find(i => i.name === name);
+        openRecipeBuilderModal(item, category);
+    }
+
+    function openRecipeBuilderModal(item, category) {
+        recipeItemName.textContent = `${item.name} (${category})`;
+        recipeItemName.dataset.category = category;
+        recipeItemName.dataset.name = item.name;
+        recipeVariantsContainer.innerHTML = '';
+
+        const ingredientOptions = inventory.map(ing => `<option value="${ing.name}"></option>`).join('');
+
+        Object.keys(item.prices).forEach(variant => {
+            const variantSection = document.createElement('div');
+            variantSection.className = 'border p-4 rounded-lg';
+            variantSection.dataset.variant = variant;
+            variantSection.innerHTML = `
+                <h3 class="font-bold text-lg mb-2">${variant}</h3>
+                <div class="ingredient-list space-y-2"></div>
+                <button class="add-ingredient-to-recipe-btn text-sm text-blue-600 hover:underline mt-3">+ Add ingredient</button>
+            `;
+            recipeVariantsContainer.appendChild(variantSection);
+
+            const ingredientListDiv = variantSection.querySelector('.ingredient-list');
+            const recipeForVariant = item.recipe ? (item.recipe[variant] || []) : [];
+            
+            recipeForVariant.forEach(ing => {
+                const row = createRecipeIngredientRow(ingredientOptions, ing.ingredient, ing.quantity);
+                ingredientListDiv.appendChild(row);
+            });
+
+            variantSection.querySelector('.add-ingredient-to-recipe-btn').addEventListener('click', () => {
+                const row = createRecipeIngredientRow(ingredientOptions);
+                ingredientListDiv.appendChild(row);
+            });
+        });
+
+        recipeModal.classList.remove('hidden');
+    }
+
+    function createRecipeIngredientRow(options, selectedIngredient = '', quantity = '') {
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-12 gap-2 items-center';
+        row.innerHTML = `
+            <div class="col-span-6">
+                <input type="text" list="ingredient-datalist" class="recipe-ingredient-name w-full border-gray-300 rounded-md p-2" placeholder="Select Ingredient" value="${selectedIngredient}">
+            </div>
+            <div class="col-span-4">
+                <input type="number" min="0" step="any" class="recipe-ingredient-quantity w-full border-gray-300 rounded-md p-2" placeholder="Qty" value="${quantity}">
+            </div>
+            <div class="col-span-2 text-right">
+                <button class="remove-recipe-ingredient-btn text-red-500 p-2 text-2xl">&times;</button>
+            </div>
+            <datalist id="ingredient-datalist">${options}</datalist>
+        `;
+        row.querySelector('.remove-recipe-ingredient-btn').addEventListener('click', () => row.remove());
+        return row;
+    }
+
+    saveRecipeBtn.addEventListener('click', () => {
+        const category = recipeItemName.dataset.category;
+        const name = recipeItemName.dataset.name;
+        const menuItem = menu[category].find(i => i.name === name);
+        
+        if (!menuItem) return;
+
+        const newRecipe = {};
+        const variantSections = recipeVariantsContainer.querySelectorAll('[data-variant]');
+        
+        variantSections.forEach(section => {
+            const variant = section.dataset.variant;
+            newRecipe[variant] = [];
+            const ingredientRows = section.querySelectorAll('.grid.grid-cols-12');
+            ingredientRows.forEach(row => {
+                const ingredientName = row.querySelector('.recipe-ingredient-name').value;
+                const quantity = parseFloat(row.querySelector('.recipe-ingredient-quantity').value);
+                const isValidIngredient = inventory.some(invItem => invItem.name === ingredientName);
+
+                if (ingredientName && !isNaN(quantity) && quantity > 0 && isValidIngredient) {
+                    newRecipe[variant].push({ ingredient: ingredientName, quantity: quantity });
+                }
+            });
+        });
+        
+        menuItem.recipe = newRecipe;
+        saveMenuToStorage();
+        recipeModal.classList.add('hidden');
+    });
+
+    closeRecipeModalBtn.addEventListener('click', () => recipeModal.classList.add('hidden'));
+    
+    // --- Resizable Columns Functionality ---
+    function initializeResizableColumns() {
+        const columns = document.querySelectorAll('.resizable-column');
+        const handles = document.querySelectorAll('.resize-handle');
+        let isResizing = false;
+        let currentHandle = null;
+        let startX = 0;
+        let leftColumn = null;
+        let rightColumn = null;
+        let leftColumnStartWidth = 0;
+        let rightColumnStartWidth = 0;
+
+        handles.forEach(handle => {
+            handle.addEventListener('mousedown', startResize);
+        });
+
+        function startResize(e) {
+            isResizing = true;
+            currentHandle = e.target;
+            startX = e.clientX;
+            
+            // Find the columns on either side of the handle
+            const handleRect = currentHandle.getBoundingClientRect();
+            const handleCenterX = handleRect.left + handleRect.width / 2;
+            
+            // Get all columns
+            const allColumns = Array.from(document.querySelectorAll('.resizable-column'));
+            
+            // Find which column contains the handle's center point
+            for (let i = 0; i < allColumns.length; i++) {
+                const columnRect = allColumns[i].getBoundingClientRect();
+                if (handleCenterX >= columnRect.left && handleCenterX <= columnRect.right) {
+                    leftColumn = allColumns[i];
+                    rightColumn = allColumns[i + 1];
+                    break;
+                }
+            }
+
+            if (leftColumn && rightColumn) {
+                leftColumnStartWidth = leftColumn.getBoundingClientRect().width;
+                rightColumnStartWidth = rightColumn.getBoundingClientRect().width;
+            }
+
+            currentHandle.classList.add('resizing');
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+
+            document.addEventListener('mousemove', handleResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function handleResize(e) {
+            if (!isResizing || !leftColumn || !rightColumn) return;
+
+            const deltaX = e.clientX - startX;
+            
+            // Calculate new widths
+            const newLeftWidth = leftColumnStartWidth + deltaX;
+            const newRightWidth = rightColumnStartWidth - deltaX;
+
+            // Minimum width constraints
+            const minWidth = 250;
+            
+            if (newLeftWidth >= minWidth && newRightWidth >= minWidth) {
+                // Update flex basis for both columns, allowing them to grow and shrink
+                leftColumn.style.flex = `1 1 ${newLeftWidth}px`;
+                rightColumn.style.flex = `1 1 ${newRightWidth}px`;
+                
+                // Force reflow to update layout
+                leftColumn.offsetHeight;
+                rightColumn.offsetHeight;
+            }
+        }
+
+        function stopResize() {
+            if (!isResizing) return;
+
+            isResizing = false;
+            currentHandle.classList.remove('resizing');
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+
+            document.removeEventListener('mousemove', handleResize);
+            document.removeEventListener('mouseup', stopResize);
+
+            // Save column sizes to localStorage
+            saveColumnSizes();
+        }
+
+        function saveColumnSizes() {
+            const columns = document.querySelectorAll('.resizable-column');
+            const sizes = Array.from(columns).map(col => {
+                const rect = col.getBoundingClientRect();
+                return rect.width;
+            });
+            localStorage.setItem('dcbColumnSizes', JSON.stringify(sizes));
+        }
+
+        function loadColumnSizes() {
+            const savedSizes = localStorage.getItem('dcbColumnSizes');
+            if (savedSizes) {
+                const sizes = JSON.parse(savedSizes);
+                const columns = document.querySelectorAll('.resizable-column');
+                
+                columns.forEach((col, index) => {
+                    if (sizes[index] && sizes[index] >= 250) {
+                        // Allow columns to grow and shrink from their saved size
+                        col.style.flex = `1 1 ${sizes[index]}px`;
+                    }
+                });
+            }
+        }
+
+        // Load saved column sizes on page load
+        loadColumnSizes();
+
+        // Make menu grid responsive during resize
+        function updateMenuGrid() {
+            const menuContainer = document.getElementById('menu-container');
+            const containerWidth = menuContainer.getBoundingClientRect().width;
+            
+            // Adjust grid columns based on available width
+            if (containerWidth < 400) {
+                menuContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+            } else if (containerWidth < 600) {
+                menuContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+            } else {
+                menuContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+            }
+        }
+
+        // Update menu grid on resize and initially
+        window.addEventListener('resize', updateMenuGrid);
+        setTimeout(updateMenuGrid, 100); // Initial update after layout stabilizes
+    }
+
+    // Initialize resizable columns after DOM is loaded
+    setTimeout(initializeResizableColumns, 100);
+
+    // --- Initial calls ---
+    loadDataFromSupabase();
+    updateFinalizeButtonState();
+});
+</script>
+
+</body>
+</html>

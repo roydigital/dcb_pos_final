@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Status - Delhi Chicken Brothers</title>
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1137576755203760');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1137576755203760&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #FDF3E7; /* Cream background from logo */
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .bg-brand-dark { background-color: var(--brand-dark); }
+        .text-brand-dark { color: var(--brand-dark); }
+        .bg-brand-cream { background-color: var(--brand-cream); }
+        .text-brand-cream { color: var(--brand-cream); }
+        .bg-brand-light-cream { background-color: var(--brand-light-cream); }
+
+        /* Status Tracker Styles */
+        .status-line {
+            position: absolute;
+            top: 1.25rem; /* Vertically center with the icon */
+            left: 1.25rem;
+            right: 1.25rem;
+            height: 4px;
+            background-color: #e5e7eb; /* gray-200 */
+            z-index: 0;
+        }
+        .status-line-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: var(--brand-red);
+            transition: width 0.5s ease-in-out;
+        }
+        .status-item {
+            z-index: 1;
+        }
+        .status-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .status-item.completed .status-icon {
+            background-color: var(--brand-red);
+            color: white;
+            border-color: var(--brand-red);
+        }
+        .status-item.current .status-icon {
+            background-color: var(--brand-red);
+            color: white;
+            border: 4px solid var(--brand-cream);
+            box-shadow: 0 0 0 3px var(--brand-red);
+        }
+        .status-item .status-label {
+            transition: color 0.3s;
+        }
+        .status-item.completed .status-label,
+        .status-item.current .status-label {
+            color: var(--brand-dark);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="text-brand-dark">
+
+    <!-- App Container -->
+    <div id="app" class="relative">
+        
+        <!-- Header -->
+        <header class="bg-brand-cream sticky top-0 z-40 shadow-md" style="background-color: #FDF3E7 !important;">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <a href="index.html" class="flex items-center gap-2">
+                    <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                    <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+                </a>
+                <a href="index.html" class="bg-brand-red text-white font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition-all duration-300">
+                    New Order
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="pt-20 pb-16 md:pt-24 md:pb-24">
+            <div class="container mx-auto px-4">
+                <div class="max-w-3xl mx-auto bg-brand-light-cream rounded-xl shadow-lg p-6 md:p-8">
+                    <div class="text-center mb-8">
+                        <h1 class="text-3xl md:text-4xl font-bold">Track Your Order</h1>
+                        <p class="text-gray-600 mt-2">Order ID: <span id="order-id" class="font-semibold">---</span></p>
+                    </div>
+
+                    <!-- Status Tracker -->
+                    <div class="relative flex justify-between items-start mb-12">
+                        <div class="status-line"><div id="status-line-progress" class="status-line-progress" style="width: 0%;"></div></div>
+                        
+                        <div id="status-pending" class="status-item flex-1 text-center">
+                            <div class="status-icon bg-gray-200 border-4 border-brand-light-cream text-gray-500 mx-auto">
+                                <i data-lucide="receipt"></i>
+                            </div>
+                            <p class="status-label text-sm md:text-base mt-2 text-gray-500">Order Placed</p>
+                        </div>
+
+                        <div id="status-accepted" class="status-item flex-1 text-center">
+                            <div class="status-icon bg-gray-200 border-4 border-brand-light-cream text-gray-500 mx-auto">
+                                <i data-lucide="chef-hat"></i>
+                            </div>
+                            <p class="status-label text-sm md:text-base mt-2 text-gray-500">Preparing</p>
+                        </div>
+
+                        <div id="status-ready" class="status-item flex-1 text-center">
+                            <div class="status-icon bg-gray-200 border-4 border-brand-light-cream text-gray-500 mx-auto">
+                                <i data-lucide="package-check"></i>
+                            </div>
+                            <p class="status-label text-sm md:text-base mt-2 text-gray-500">Ready</p>
+                        </div>
+
+                        <div id="status-delivered" class="status-item flex-1 text-center">
+                            <div class="status-icon bg-gray-200 border-4 border-brand-light-cream text-gray-500 mx-auto">
+                                <i data-lucide="party-popper"></i>
+                            </div>
+                            <p class="status-label text-sm md:text-base mt-2 text-gray-500">Delivered</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold mb-2" id="current-status-text">Connecting to server...</h2>
+                        <p class="text-gray-500" id="status-update-time">Fetching latest update...</p>
+                    </div>
+
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="text-xl font-bold mb-4">Your Order Summary</h3>
+                        <div id="order-items-summary" class="space-y-2">
+                            <!-- Order items will be injected here -->
+                            <div class="text-center text-gray-500 p-4">Loading order details...</div>
+                        </div>
+                        <div class="flex justify-between items-center mt-4 pt-4 border-t font-bold text-lg">
+                            <span>Grand Total</span>
+                            <span id="grand-total">--.--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Supabase Client Setup
+            const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            lucide.createIcons();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('order_id');
+            
+            const orderIdEl = document.getElementById('order-id');
+            const statusLineProgress = document.getElementById('status-line-progress');
+            const currentStatusText = document.getElementById('current-status-text');
+            const statusUpdateTime = document.getElementById('status-update-time');
+            const orderItemsSummary = document.getElementById('order-items-summary');
+            const grandTotalEl = document.getElementById('grand-total');
+
+            const statuses = ['Pending', 'Accepted', 'Ready', 'Delivered'];
+            const statusElements = {
+                'Pending': document.getElementById('status-pending'),
+                'Accepted': document.getElementById('status-accepted'),
+                'Ready': document.getElementById('status-ready'),
+                'Delivered': document.getElementById('status-delivered'),
+            };
+
+            if (!orderId) {
+                currentStatusText.textContent = "No Order ID found.";
+                orderIdEl.textContent = "N/A";
+                return;
+            }
+
+            orderIdEl.textContent = `#${orderId}`;
+
+            function updateStatusUI(status) {
+                const currentStatusIndex = statuses.indexOf(status);
+                if (currentStatusIndex === -1) return;
+
+                // Update progress bar
+                const progressPercentage = (currentStatusIndex / (statuses.length - 1)) * 100;
+                statusLineProgress.style.width = `${progressPercentage}%`;
+
+                // Update status text
+                const statusMessages = {
+                    'Pending': 'Your order has been placed!',
+                    'Accepted': 'The kitchen is preparing your delicious meal.',
+                    'Ready': 'Your order is ready for pickup/delivery!',
+                    'Delivered': 'Enjoy your meal! Order delivered.',
+                };
+                currentStatusText.textContent = statusMessages[status] || 'Status updated.';
+                statusUpdateTime.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+                // Update icons and labels
+                for (let i = 0; i < statuses.length; i++) {
+                    const s = statuses[i];
+                    const el = statusElements[s];
+                    el.classList.remove('current', 'completed');
+                    if (i < currentStatusIndex) {
+                        el.classList.add('completed');
+                    } else if (i === currentStatusIndex) {
+                        el.classList.add('current');
+                    }
+                }
+            }
+
+            async function fetchOrderDetails() {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('orders')
+                        .select(`
+                            *,
+                            order_items (
+                                item_name,
+                                variant,
+                                quantity,
+                                price_per_unit
+                            )
+                        `)
+                        .eq('id', orderId)
+                        .single();
+
+                    if (error) throw error;
+
+                    // Render order items
+                    orderItemsSummary.innerHTML = data.order_items.map(item => `
+                        <div class="flex justify-between items-center text-sm">
+                            <div>
+                                <p class="font-semibold">${item.item_name} <span class="text-xs text-gray-500">(${item.variant})</span></p>
+                                <p class="text-gray-600">Qty: ${item.quantity}</p>
+                            </div>
+                            <p class="font-medium">₹${(item.quantity * item.price_per_unit).toFixed(2)}</p>
+                        </div>
+                    `).join('');
+                    
+                    grandTotalEl.textContent = `₹${parseFloat(data.grand_total).toFixed(2)}`;
+                    
+                    // Initial UI update
+                    updateStatusUI(data.status);
+
+                } catch (err) {
+                    console.error("Error fetching order details:", err);
+                    currentStatusText.textContent = "Could not fetch order details.";
+                }
+            }
+
+            // Listen for real-time updates
+            const channel = supabaseClient
+                .channel(`order-status-${orderId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `id=eq.${orderId}`
+                    },
+                    (payload) => {
+                        console.log('Status update received!', payload);
+                        const newStatus = payload.new.status;
+                        updateStatusUI(newStatus);
+                    }
+                )
+                .subscribe();
+
+        // Initial fetch
+        fetchOrderDetails();
+    });
+</script>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-cream border-t border-gray-700">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-red transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-red transition-colors">About Us</a></li>
+                        <li><a href="index.html#contact" class="text-gray-400 hover:text-brand-red transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-red transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-red transition-colors">Terms & Conditions</a></li>
+                        <li><a href="privacy-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Privacy Policy</a></li>

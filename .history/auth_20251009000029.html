@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In / Sign Up - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FDF3E7;
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .focus\:ring-brand-red:focus {
+            --tw-ring-color: var(--brand-red);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center py-8">
+        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+            <div class="text-center">
+                <a href="index.html" class="inline-block mb-4">
+                    <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="w-20 h-20 mx-auto">
+                </a>
+                <h1 id="form-title" class="text-2xl font-bold text-brand-dark">Sign In to Your Account</h1>
+                <p class="text-sm text-gray-500">Or <button id="switch-to-signup" class="font-medium text-brand-red hover:underline">create a new account</button></p>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="signin-form" class="space-y-6">
+                <div>
+                    <label for="signin-email" class="text-sm font-medium text-gray-700">Email or Mobile Number</label>
+                    <input id="signin-email" name="email" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red" placeholder="you@example.com or 9876543210">
+                </div>
+                <div>
+                    <label for="signin-password" class="text-sm font-medium text-gray-700">Password</label>
+                    <input id="signin-password" name="password" type="password" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red" placeholder="••••••••">
+                </div>
+                <div>
+                    <button type="submit" class="w-full px-4 py-2 font-bold text-white bg-brand-red rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-red">Sign In</button>
+                </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="hidden space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="first-name" class="text-sm font-medium text-gray-700">First Name</label>
+                        <input id="first-name" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                    <div>
+                        <label for="last-name" class="text-sm font-medium text-gray-700">Last Name</label>
+                        <input id="last-name" type="text" class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                </div>
+                 <div>
+                    <label for="signup-mobile" class="text-sm font-medium text-gray-700">Mobile Number</label>
+                    <input id="signup-mobile" type="tel" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                </div>
+                <div>
+                    <label for="signup-email" class="text-sm font-medium text-gray-700">Email (Optional)</label>
+                    <input id="signup-email" type="email" class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                </div>
+                <div>
+                    <label for="signup-password" class="text-sm font-medium text-gray-700">Password</label>
+                    <input id="signup-password" type="password" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                </div>
+                 <h3 class="font-semibold pt-2">Delivery Address</h3>
+                 <div>
+                    <label for="building-no" class="text-sm font-medium text-gray-700">Building No / Flat No</label>
+                    <input id="building-no" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                </div>
+                 <div>
+                    <label for="area" class="text-sm font-medium text-gray-700">Area / Street</label>
+                    <input id="area" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="city" class="text-sm font-medium text-gray-700">City</label>
+                        <input id="city" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                    <div>
+                        <label for="state" class="text-sm font-medium text-gray-700">State</label>
+                        <input id="state" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                </div>
+                 <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="pin-code" class="text-sm font-medium text-gray-700">PIN Code</label>
+                        <input id="pin-code" type="text" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                    <div>
+                        <label for="landmark" class="text-sm font-medium text-gray-700">Landmark (Optional)</label>
+                        <input id="landmark" type="text" class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="w-full px-4 py-2 font-bold text-white bg-brand-red rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-red">Create Account</button>
+                </div>
+            </form>
+            <!-- Google Sign In Button -->
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">Or continue with</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button id="google-signin-btn" class="w-full flex justify-center items-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-red">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Continue with Google
+                    </button>
+                </div>
+            </div>
+
+            <p id="form-switch-text" class="text-sm text-center text-gray-500">
+                Don't have an account? <button id="switch-to-signup-2" class="font-medium text-brand-red hover:underline">Sign up</button>
+            </p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Your Supabase credentials
+        const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const signinForm = document.getElementById('signin-form');
+        const signupForm = document.getElementById('signup-form');
+        const switchToSignupBtn = document.getElementById('switch-to-signup');
+        const switchToSignupBtn2 = document.getElementById('switch-to-signup-2');
+        
+        const formTitle = document.getElementById('form-title');
+        const formSwitchText = document.getElementById('form-switch-text');
+
+        function switchToSignup() {
+            signinForm.classList.add('hidden');
+            signupForm.classList.remove('hidden');
+            formTitle.textContent = 'Create a New Account';
+            formSwitchText.innerHTML = 'Already have an account? <button id="switch-to-signin" class="font-medium text-brand-red hover:underline">Sign in</button>';
+            document.getElementById('switch-to-signin').addEventListener('click', switchToSignin);
+        }
+
+        function switchToSignin() {
+            signupForm.classList.add('hidden');
+            signinForm.classList.remove('hidden');
+            formTitle.textContent = 'Sign In to Your Account';
+            formSwitchText.innerHTML = `Don't have an account? <button id="switch-to-signup-2" class="font-medium text-brand-red hover:underline">Sign up</button>`;
+            document.getElementById('switch-to-signup-2').addEventListener('click', switchToSignup);
+        }
+
+        switchToSignupBtn.addEventListener('click', switchToSignup);
+        switchToSignupBtn2.addEventListener('click', switchToSignup);
+
+        // Google Sign-In Handler
+        document.getElementById('google-signin-btn').addEventListener('click', async () => {
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'https://kjbelegkbusvtvtcgwhq.supabase.co/auth/v1/callback'
+                }
+            });
+
+            if (error) {
+                alert('Error signing in with Google: ' + error.message);
+            } else {
+                // The OAuth flow will redirect the user, so we don't need to do anything here
+                console.log('Google OAuth initiated successfully');
+            }
+        });
+
+        // Handle Sign-up
+        signupForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const password = document.getElementById('signup-password').value;
+            
+            // Use mobile number for authentication, email is optional metadata
+            const mobile = document.getElementById('signup-mobile').value;
+            
+            // For Supabase Auth, we need an email or phone. We will use a dummy email if one is not provided.
+            const email = document.getElementById('signup-email').value || `${mobile}@dcb.com`;
+
+            const userData = {
+                first_name: document.getElementById('first-name').value,
+                last_name: document.getElementById('last-name').value,
+                mobile_number: mobile,
+                email: document.getElementById('signup-email').value,
+                building_no: document.getElementById('building-no').value,
+                area: document.getElementById('area').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pin_code: document.getElementById('pin-code').value,
+                landmark: document.getElementById('landmark').value,
+            };
+
+            // Step 1: Create user in Supabase Auth, passing profile data in metadata
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: userData
+                }
+            });
+
+            if (authError) {
+                alert('Error signing up: ' + authError.message);
+                return;
+            }
+
+            if (authData.user) {
+                // A database trigger will now handle profile creation automatically.
+                alert('Sign up successful! Please check your email to verify your account.');
+                // Redirect to home or checkout page
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Handle Sign-in
+        signinForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const emailOrMobile = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+
+            // We assume login is with email for Supabase Auth
+            // A more complex setup is needed for mobile + password without a 3rd party provider
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: emailOrMobile,
+                password: password,
+            });
+
+            if (error) {
+                alert('Error signing in: ' + error.message);
+            } else {
+                alert('Signed in successfully!');
+                // On successful login, redirect back to the main page
+                // The main page will handle the checkout process now that the user is authenticated.
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-cream border-t border-gray-700">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-red transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-red transition-colors">About Us</a></li>
+                        <li><a href="index.html#contact" class="text-gray-400 hover:text-brand-red transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-red transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-red transition-colors">Terms & Conditions</a></li>
+                        <li><a href="privacy-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Privacy Policy</a></li>
+                        <li><a href="refund-cancellation-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Refund & Cancellation</a></li>
+                        <li><a href="delivery-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Delivery Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Us -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Contact Us</h4>
+                    <p class="text-gray-400 mb-2 text-sm">AAR City Regency Park Market</p>
+                    <p class="text-gray-400 text-sm">
+                        Call for orders: <a href="tel:9211022131" class="text-brand-red font-semibold hover:underline">9211022131</a>
+                    </p>
+                     <div class="flex gap-4 mt-6">
+                        <a href="https://link.zomato.com/xqzv/rshare?id=11881452130563f13" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Zomato">
+                            <img src="https://dcbchicken.com/images/zomato.png" class="h-8" alt="Zomato">
+                        </a>

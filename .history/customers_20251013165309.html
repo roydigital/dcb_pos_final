@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Insights - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #FDF3E7;
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .bg-brand-dark { background-color: var(--brand-dark); }
+        .text-brand-dark { color: var(--brand-dark); }
+        .bg-brand-cream { background-color: var(--brand-cream); }
+        .text-brand-cream { color: var(--brand-cream); }
+        .bg-brand-light-cream { background-color: var(--brand-light-cream); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--brand-cream);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-red);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a81f1f;
+        }
+        
+        .customer-card {
+            transition: all 0.3s ease;
+        }
+        .customer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Badge styles */
+        .badge-new { background-color: #10B981; color: white; }
+        .badge-returning { background-color: #3B82F6; color: white; }
+        .badge-frequent { background-color: #8B5CF6; color: white; }
+        .badge-high-value { background-color: #F59E0B; color: white; }
+        .badge-inactive { background-color: #6B7280; color: white; }
+        
+        /* Drawer animations */
+        .drawer-enter {
+            transform: translateX(100%);
+        }
+        .drawer-enter-active {
+            transform: translateX(0);
+            transition: transform 0.3s ease-out;
+        }
+        .drawer-exit {
+            transform: translateX(0);
+        }
+        .drawer-exit-active {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-brand-cream sticky top-0 z-40 shadow-md" style="background-color: #FDF3E7 !important;">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-sm font-medium hover:text-brand-red transition-colors">← Back to Home</a>
+                <div id="auth-container"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">Customer Insights</h1>
+            <p class="text-gray-600">Deep analytics and insights about your customers</p>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Customers</p>
+                        <p id="total-customers" class="text-2xl font-bold text-brand-dark">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="users" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Active Customers</p>
+                        <p id="active-customers" class="text-2xl font-bold text-brand-dark">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="user-check" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
+                        <p id="avg-order-value" class="text-2xl font-bold text-brand-dark">₹0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="trending-up" class="h-6 w-6 text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Customer Retention</p>
+                        <p id="retention-rate" class="text-2xl font-bold text-brand-dark">0%</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="repeat" class="h-6 w-6 text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 customer-card">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[300px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
+                    <input type="text" id="search-input" placeholder="Search by name, email, or phone..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by City</label>
+                    <select id="city-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                        <option value="">All Cities</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                    <select id="type-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                        <option value="">All Types</option>
+                        <option value="new">New Customers</option>
+                        <option value="returning">Returning Customers</option>
+                        <option value="frequent">Frequent Customers</option>
+                        <option value="high-value">High-Value Customers</option>
+                        <option value="inactive">Inactive Customers</option>
+                    </select>
+                </div>
+
+                <button id="clear-filters" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Analytics Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Top Customers Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Top 10 Customers by Total Spend</h3>
+                <div class="h-64">
+                    <canvas id="top-customers-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Customer Distribution Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Customer Distribution</h3>
+                <div class="h-64">
+                    <canvas id="customer-distribution-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Overview Table -->
+        <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-brand-dark">Customer Overview</h3>
+                <div class="text-sm text-gray-600" id="customer-count">Showing 0 customers</div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Orders</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Order</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Customer data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Loading State -->
+            <div id="table-loading" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
+                <p class="text-gray-600">Loading customer data...</p>
+            </div>
+
+            <!-- No Results State -->
+            <div id="no-results" class="text-center py-8 hidden">
+                <i data-lucide="users" class="h-16 w-16 text-gray-300 mx-auto mb-4"></i>
+                <p class="text-gray-600">No customers found matching your criteria.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Customer Details Drawer -->
+    <div id="customer-drawer" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" id="drawer-overlay"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl overflow-y-auto drawer-enter">
+            <div class="p-6">
+                <!-- Drawer Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-brand-dark">Customer Details</h2>
+                    <button id="close-drawer" class="p-2 rounded-full hover:bg-gray-200">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+
+                <!-- Customer Profile -->
+                <div id="customer-profile" class="space-y-6">
+                    <!-- Loading State -->
+                    <div id="profile-loading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
+                        <p class="text-gray-600">Loading customer details...</p>
+                    </div>
+
+                    <!-- Customer Content (will be populated dynamically) -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-cream border-t border-gray-700 mt-auto">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-red transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-red transition-colors">About Us</a></li>
+                        <li><a href="contact-us.html" class="text-gray-400 hover:text-brand-red transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-red transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-red transition-colors">Terms & Conditions</a></li>
+                        <li><a href="privacy-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Privacy Policy</a></li>
+                        <li><a href="refund-cancellation-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Refund & Cancellation</a></li>
+                        <li><a href="delivery-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Delivery Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Us -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Contact Us</h4>
+                    <p class="text-gray-400 mb-2 text-sm">AAR City Regency Park Market</p>
+                    <p class="text-gray-400 text-sm">
+                        Call for orders: <a href="tel:9211022131" class="text-brand-red font-semibold hover:underline">9211022131</a>
+                    </p>
+                    <div class="flex gap-4 mt-6">
+                        <a href="https://link.zomato.com/xqzv/rshare?id=11881452130563f13" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Zomato">
+                            <img src="https://dcbchicken.com/images/zomato.png" class="h-8" alt="Zomato">
+                        </a>
+                        <a href="https://www.swiggy.com/direct/brand/691868?source=swiggy-direct&subSource=google" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Swiggy">
+                            <img src="https://dcbchicken.com/images/swiggy.png" class="h-8" alt="Swiggy">
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center">
+                <p class="text-sm text-gray-400">&copy; 2024 Delhi Chicken Brothers. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Global variables
+        let customersData = [];
+        let ordersData = [];
+        let orderItemsData = [];
+        let filteredCustomers = [];
+        
+        // Chart instances
+        let topCustomersChart = null;
+        let customerDistributionChart = null;
+
+        // DOM Elements
+        const searchInput = document.getElementById('search-input');
+        const cityFilter = document.getElementById('city-filter');
+        const typeFilter = document.getElementById('type-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const customersTableBody = document.getElementById('customers-table-body');
+        const tableLoading = document.getElementById('table-loading');
+        const noResults = document.getElementById('no-results');
+        const customerCount = document.getElementById('customer-count');
+        
+        // Customer drawer elements
+        const customerDrawer = document.getElementById('customer-drawer');
+        const drawerOverlay = document.getElementById('drawer-overlay');
+        const closeDrawerBtn = document.getElementById('close-drawer');
+        const customerProfile = document.getElementById('customer-profile');
+        const profileLoading = document.getElementById('profile-loading');
+
+        // Supabase Client Setup
+        const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize lucide icons
+            lucide.createIcons();
+            
+            // Setup auth
+            await setupAuthUI();
+            
+            // Load data
+            await loadDataFromSupabase();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initialize charts
+            initializeCharts();
+        });
+
+        async function setupAuthUI() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const authContainer = document.getElementById('auth-container');
+            
+            if (session) {
+                authContainer.innerHTML = `
+                    <button id="signout-button" class="bg-brand-red text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                        Sign Out
+                    </button>
+                `;
+                document.getElementById('signout-button').addEventListener('click', async () => {
+                    await supabaseClient.auth.signOut();
+                    window.location.reload();
+                });
+            } else {
+                authContainer.innerHTML = `
+                    <a href="auth.html" class="bg-brand-red text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                        Sign In
+                    </a>
+                `;
+            }
+        }
+
+        function setupEventListeners() {
+            // Search and filter events
+            searchInput.addEventListener('input', applyFilters);
+            cityFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+            clearFiltersBtn.addEventListener('click', clearFilters);
+            
+            // Drawer events
+            closeDrawerBtn.addEventListener('click', closeCustomerDrawer);
+            drawerOverlay.addEventListener('click', closeCustomerDrawer);
+        }
+
+        async function loadDataFromSupabase() {
+            showTableLoading();
+            
+            try {
+                // Fetch customers data
+                const { data: customers, error: customersError } = await supabaseClient
+                    .from('customers')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (customersError) throw customersError;
+
+                // Fetch orders data
+                const { data: orders, error: ordersError } = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (ordersError) throw ordersError;
+
+                // Fetch order items data
+                const { data: orderItems, error: itemsError } = await supabaseClient
+                    .from('order_items')
+                    .select('*');
+
+                if (itemsError) throw itemsError;
+
+                // Store the data
+                customersData = customers || [];
+                ordersData = orders || [];
+                orderItemsData = orderItems || [];
+
+                console.log(`Loaded ${customersData.length} customers, ${ordersData.length} orders, and ${orderItemsData.length} order items`);
+
+                // Process customer data with analytics
+                processCustomerAnalytics();
+                
+                // Populate city filter
+                populateCityFilter();
+                
+                // Apply initial filters
+                applyFilters();
+                
+                // Update dashboard stats
+                updateDashboardStats();
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load customer data. Please try again.');
+            } finally {
+                hideTableLoading();
+            }
+        }
+
+        function processCustomerAnalytics() {
+            // Add analytics to each customer
+            customersData.forEach(customer => {
+                // Get customer's orders
+                const customerOrders = ordersData.filter(order => order.customer_id === customer.user_id);
+                
+                // Calculate customer metrics
+                customer.totalOrders = customerOrders.length;
+                customer.totalSpent = customerOrders.reduce((sum, order) => sum + (parseFloat(order.grand_total) || 0), 0);
+                customer.avgOrderValue = customer.totalOrders > 0 ? customer.totalSpent / customer.totalOrders : 0;
+                
+                // Get last order date
+                const lastOrder = customerOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                customer.lastOrderDate = lastOrder ? new Date(lastOrder.created_at) : null;
+                
+                // Calculate days since last order
+                customer.daysSinceLastOrder = customer.lastOrderDate ? 
+                    Math.floor((new Date() - customer.lastOrderDate) / (1000 * 60 * 60 * 24)) : null;
+                
+                // Determine customer type
+                customer.type = determineCustomerType(customer);
+                
+                // Get preferred payment method
+                const paymentMethods = {};
+                customerOrders.forEach(order => {
+                    paymentMethods[order.payment_mode] = (paymentMethods[order.payment_mode] || 0) + 1;
+                });
+                customer.preferredPayment = Object.keys(paymentMethods).reduce((a, b) => 
+                    paymentMethods[a] > paymentMethods[b] ? a : b, 'Unknown');
+                
+                // Get most ordered items
+                const customerOrderItems = orderItemsData.filter(item => 
+                    customerOrders.some(order => order.id === item.order_id)
+                );
+                
+                const itemCounts = {};
+                customerOrderItems.forEach(item => {
+                    const key = `${item.item_name} - ${item.variant}`;
+                    itemCounts[key] = (itemCounts[key] || 0) + item.quantity;
+                });
+                
+                customer.mostOrderedItems = Object.entries(itemCounts)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 3)
+                    .map(([item, count]) => ({ item, count }));
+            });
+        }
+
+        function determineCustomerType(customer) {
+            if (customer.totalOrders === 0) return 'new';
+            if (customer.daysSinceLastOrder > 30) return 'inactive';
+            if (customer.totalOrders >= 5) return 'frequent';
+            if (customer.totalSpent >= 2000) return 'high-value';
+            if (customer.totalOrders >= 2) return 'returning';
+            return 'new';
+        }
+
+        function getCustomerBadge(type) {
+            const badges = {
+                'new': { class: 'badge-new', text: 'New' },
+                'returning': { class: 'badge-returning', text: 'Returning' },
+                'frequent': { class: 'badge-frequent', text: 'Frequent' },
+                'high-value': { class: 'badge-high-value', text: 'High-Value' },
+                'inactive': { class: 'badge-inactive', text: 'Inactive' }
+            };
+            return badges[type] || { class: 'badge-new', text: 'New' };
+        }
+
+        function populateCityFilter() {
+            const cities = [...new Set(customersData.map(customer => customer.city).filter(Boolean))].sort();
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                cityFilter.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            let filtered = [...customersData];
+            
+            // Apply search filter
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(customer => 
+                    (customer.first_name && customer.first_name.toLowerCase().includes(searchTerm)) ||
+                    (customer.last_name && customer.last_name.toLowerCase().includes(searchTerm)) ||
+                    (customer.email && customer.email.toLowerCase().includes(searchTerm)) ||
+                    (customer.mobile_number && customer.mobile_number.includes(searchTerm))
+                );
+            }
+            
+            // Apply city filter
+            const selectedCity = cityFilter.value;
+            if (selectedCity) {
+                filtered = filtered.filter(customer => customer.city === selectedCity);
+            }
+            
+            // Apply type filter
+            const selectedType = typeFilter.value;
+            if (selectedType) {
+                filtered = filtered.filter(customer => customer.type === selectedType);
+            }
+            
+            filteredCustomers = filtered;
+            updateCustomerTable();
+            updateCharts();
+        }
+
+        function clearFilters() {
+            searchInput.value = '';
+            cityFilter.value = '';
+            typeFilter.value = '';
+            applyFilters();
+        }
+
+        function updateCustomerTable() {
+            customersTableBody.innerHTML = '';
+            
+            if (filteredCustomers.length === 0) {
+                noResults.classList.remove('hidden');
+                customerCount.textContent = 'Showing 0 customers';
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            customerCount.textContent = `Showing ${filteredCustomers.length} customers`;
+            
+            filteredCustomers.forEach(customer => {
+                const badge = getCustomerBadge(customer.type);
+                const row = document.createElement('tr');
+                row.className = 'fade-in cursor-pointer hover:bg-gray-50';
+                row.addEventListener('click', () => openCustomerDrawer(customer.user_id));
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-brand-red rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
+                                ${(customer.first_name?.charAt(0) || '') + (customer.last_name?.charAt(0) || '') || 'C'}
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">
+                                    ${customer.first_name || ''} ${customer.last_name || ''}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    Joined ${formatDate(customer.created_at)}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${customer.mobile_number || 'N/A'}</div>
+                        <div class="text-sm text-gray-500">${customer.email || 'No email'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${customer.city || 'N/A'}</div>
+                        <div class="text-sm text-gray-500">${customer.area || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${customer.totalOrders}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ₹${customer.totalSpent.toLocaleString('en-IN')}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${customer.lastOrderDate ? formatDate(customer.lastOrderDate) : 'No orders'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.class}">
+                            ${badge.text}
+                        </span>
+                    </td>
+                `;
+                
+                customersTableBody.appendChild(row);
+            });
+        }
+
+        function updateDashboardStats() {
+            const totalCustomers = customersData.length;
+            const activeCustomers = customersData.filter(c => c.daysSinceLastOrder <= 30 || c.totalOrders === 0).length;
+            const totalRevenue = customersData.reduce((sum, c) => sum + c.totalSpent, 0);

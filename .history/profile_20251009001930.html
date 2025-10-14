@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Delhi Chicken Brothers</title>
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1137576755203760');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1137576755203760&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FDF3E7;
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .focus\:ring-brand-red:focus {
+            --tw-ring-color: var(--brand-red);
+        }
+        .profile-card {
+            transition: all 0.3s ease;
+        }
+        .profile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-brand-cream sticky top-0 z-40 shadow-md" style="background-color: #FDF3E7 !important;">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-sm font-medium hover:text-brand-red transition-colors">← Back to Home</a>
+                <button id="signout-button" class="bg-brand-red text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
+        <div class="max-w-4xl mx-auto">
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">My Profile</h1>
+                <p class="text-gray-600">Manage your account information and preferences</p>
+            </div>
+
+            <!-- Profile Overview Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 profile-card">
+                <div class="flex items-center gap-6 mb-6">
+                    <div class="w-20 h-20 bg-brand-red rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        <span id="user-initials">U</span>
+                    </div>
+                    <div>
+                        <h2 id="user-fullname" class="text-2xl font-bold text-brand-dark">User Name</h2>
+                        <p id="user-email" class="text-gray-600">user@example.com</p>
+                        <p id="user-mobile" class="text-gray-600">+91 9876543210</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div class="bg-brand-light-cream rounded-lg p-4">
+                        <div class="text-2xl font-bold text-brand-red" id="total-orders">0</div>
+                        <div class="text-sm text-gray-600">Total Orders</div>
+                    </div>
+                    <div class="bg-brand-light-cream rounded-lg p-4">
+                        <div class="text-2xl font-bold text-brand-red" id="loyalty-points">0</div>
+                        <div class="text-sm text-gray-600">Loyalty Points</div>
+                    </div>
+                    <div class="bg-brand-light-cream rounded-lg p-4">
+                        <div class="text-2xl font-bold text-brand-red" id="member-since">2024</div>
+                        <div class="text-sm text-gray-600">Member Since</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Profile Form -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 profile-card">
+                <h3 class="text-xl font-bold text-brand-dark mb-6">Edit Profile Information</h3>
+                
+                <form id="profile-form" class="space-y-6">
+                    <!-- Personal Information -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4 text-brand-dark">Personal Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                                <input type="text" id="first-name" name="first_name" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                            <div>
+                                <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                <input type="text" id="last-name" name="last_name" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="mobile-number" class="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
+                                <input type="tel" id="mobile-number" name="mobile_number" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="email" name="email" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Address -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4 text-brand-dark">Delivery Address</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="building-no" class="block text-sm font-medium text-gray-700 mb-1">Building No / Flat No *</label>
+                                <input type="text" id="building-no" name="building_no" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                            <div>
+                                <label for="area" class="block text-sm font-medium text-gray-700 mb-1">Area / Street *</label>
+                                <input type="text" id="area" name="area" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                                    <input type="text" id="city" name="city" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                                </div>
+                                <div>
+                                    <label for="state" class="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                                    <input type="text" id="state" name="state" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="pin-code" class="block text-sm font-medium text-gray-700 mb-1">PIN Code *</label>
+                                    <input type="text" id="pin-code" name="pin_code" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                                </div>
+                                <div>
+                                    <label for="landmark" class="block text-sm font-medium text-gray-700 mb-1">Landmark (Optional)</label>
+                                    <input type="text" id="landmark" name="landmark" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Note about preferences -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="info" class="h-5 w-5 text-blue-500 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-1">Profile Information</h4>
+                                <p class="text-sm text-blue-700">Your profile details are securely stored and used for order processing and delivery.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                        <button type="submit" class="bg-brand-red text-white font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition-all duration-300 flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="h-5 w-5"></i>
+                            Save Changes
+                        </button>
+                        <button type="button" id="cancel-btn" class="bg-gray-300 text-gray-700 font-bold py-3 px-8 rounded-lg hover:bg-gray-400 transition-all duration-300">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <a href="order-history.html" class="bg-white rounded-xl shadow-lg p-6 profile-card hover:shadow-xl transition-all duration-300 group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-brand-red rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                            <i data-lucide="shopping-bag" class="h-6 w-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-brand-dark">Order History</h3>
+                            <p class="text-sm text-gray-600">View your past orders and receipts</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="#" class="bg-white rounded-xl shadow-lg p-6 profile-card hover:shadow-xl transition-all duration-300 group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-brand-red rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                            <i data-lucide="heart" class="h-6 w-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-brand-dark">Favorites</h3>
+                            <p class="text-sm text-gray-600">Your favorite dishes and combos</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Order Status Bar -->
+    <div id="order-status-bar" class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 transform translate-y-full transition-transform duration-300 z-50 hidden">
+      <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="flex-shrink-0">
+              <div class="w-10 h-10 bg-brand-red rounded-full flex items-center justify-center text-white">
+                <i data-lucide="package" class="h-5 w-5"></i>
+              </div>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-800 text-sm">Order #<span id="bar-order-id">---</span></h4>
+              <div class="flex items-center space-x-2 mt-1">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <p class="text-xs text-gray-600">Status: <span id="bar-order-status" class="font-medium">---</span></p>
+                <span id="bar-order-time" class="text-xs text-gray-500">Just now</span>
+              </div>
+            </div>
+          </div>
+          <button id="view-order-details" class="bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors text-sm font-medium flex items-center space-x-2">
+            <i data-lucide="eye" class="h-4 w-4"></i>
+            <span>View Details</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
+            <span class="text-brand-dark font-medium">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="success-message" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 hidden transition-all duration-300">
+        <div class="flex items-center gap-2">
+            <i data-lucide="check-circle" class="h-5 w-5"></i>
+            <span>Profile updated successfully!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-cream border-t border-gray-700 mt-auto">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-red transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-red transition-colors">About Us</a></li>
+                        <li><a href="index.html#contact" class="text-gray-400 hover:text-brand-red transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-red transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-red transition-colors">Terms & Conditions</a></li>
+                        <li><a href="privacy-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Privacy Policy</a></li>
+                        <li><a href="refund-cancellation-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Refund & Cancellation</a></li>
+                        <li><a href="delivery-policy.html" class="text-gray-400 hover:text-brand-red transition-colors">Delivery Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Us -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Contact Us</h4>
+                    <p class="text-gray-400 mb-2 text-sm">AAR City Regency Park Market</p>
+                    <p class="text-gray-400 text-sm">
+                        Call for orders: <a href="tel:9211022131" class="text-brand-red font-semibold hover:underline">9211022131</a>
+                    </p>
+                     <div class="flex gap-4 mt-6">
+                        <a href="https://link.zomato.com/xqzv/rshare?id=11881452130563f13" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Zomato">

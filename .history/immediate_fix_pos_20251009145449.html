@@ -1,0 +1,23 @@
+<!-- IMMEDIATE FIX FOR COUPON COLUMNS ERROR -->
+<!-- This version temporarily removes coupon columns from the order insert until you run the SQL -->
+
+<script>
+// TEMPORARY FIX: Modified finalizeOrder function that doesn't use coupon columns
+async function finalizeOrder() {
+    try {
+        // 1. Deduct from inventory
+        currentOrder.forEach(orderItem => {
+            const menuItem = Object.values(menu).flat().find(m => m.name === orderItem.name);
+            if (menuItem && menuItem.recipe && menuItem.recipe[orderItem.variant]) {
+                const recipeForVariant = menuItem.recipe[orderItem.variant];
+                recipeForVariant.forEach(recipeIngredient => {
+                    const inventoryItem = inventory.find(i => i.name === recipeIngredient.ingredient);
+                    if (inventoryItem) {
+                        inventoryItem.stock -= recipeIngredient.quantity * orderItem.qty;
+                    }
+                });
+            }
+        });
+        saveInventoryToStorage();
+
+        // 2. Calculate totals with discount

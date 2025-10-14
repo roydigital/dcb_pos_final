@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Insights - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #FDF3E7;
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .bg-brand-dark { background-color: var(--brand-dark); }
+        .text-brand-dark { color: var(--brand-dark); }
+        .bg-brand-cream { background-color: var(--brand-cream); }
+        .text-brand-cream { color: var(--brand-cream); }
+        .bg-brand-light-cream { background-color: var(--brand-light-cream); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--brand-cream);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-red);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a81f1f;
+        }
+        
+        .customer-card {
+            transition: all 0.3s ease;
+        }
+        .customer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Badge styles */
+        .badge-new { background-color: #10B981; color: white; }
+        .badge-returning { background-color: #3B82F6; color: white; }
+        .badge-frequent { background-color: #8B5CF6; color: white; }
+        .badge-high-value { background-color: #F59E0B; color: white; }
+        .badge-inactive { background-color: #6B7280; color: white; }
+        
+        /* Drawer animations */
+        .drawer-enter {
+            transform: translateX(100%);
+        }
+        .drawer-enter-active {
+            transform: translateX(0);
+            transition: transform 0.3s ease-out;
+        }
+        .drawer-exit {
+            transform: translateX(0);
+        }
+        .drawer-exit-active {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-brand-cream sticky top-0 z-40 shadow-md" style="background-color: #FDF3E7 !important;">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-sm font-medium hover:text-brand-red transition-colors">← Back to Home</a>
+                <div id="auth-container"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">Customer Insights</h1>
+            <p class="text-gray-600">Deep analytics and insights about your customers</p>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Customers</p>
+                        <p id="total-customers" class="text-2xl font-bold text-brand-dark">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="users" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Active Customers</p>
+                        <p id="active-customers" class="text-2xl font-bold text-brand-dark">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="user-check" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
+                        <p id="avg-order-value" class="text-2xl font-bold text-brand-dark">₹0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="trending-up" class="h-6 w-6 text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Customer Retention</p>
+                        <p id="retention-rate" class="text-2xl font-bold text-brand-dark">0%</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="repeat" class="h-6 w-6 text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 customer-card">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[300px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
+                    <input type="text" id="search-input" placeholder="Search by name, email, or phone..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by City</label>
+                    <select id="city-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                        <option value="">All Cities</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                    <select id="type-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-brand-red">
+                        <option value="">All Types</option>
+                        <option value="new">New Customers</option>
+                        <option value="returning">Returning Customers</option>
+                        <option value="frequent">Frequent Customers</option>
+                        <option value="high-value">High-Value Customers</option>
+                        <option value="inactive">Inactive Customers</option>
+                    </select>
+                </div>
+
+                <button id="clear-filters" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Analytics Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Top Customers Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Top 10 Customers by Total Spend</h3>
+                <div class="h-64">
+                    <canvas id="top-customers-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Customer Distribution Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Customer Distribution</h3>
+                <div class="h-64">
+                    <canvas id="customer-distribution-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Overview Table -->
+        <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-brand-dark">Customer Overview</h3>
+                <div class="text-sm text-gray-600" id="customer-count">Showing 0 customers</div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Orders</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Order</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Customer data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Loading State -->
+            <div id="table-loading" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
+                <p class="text-gray-600">Loading customer data...</p>
+            </div>
+
+            <!-- No Results State -->
+            <div id="no-results" class="text-center py-8 hidden">
+                <i data-lucide="users" class="h-16 w-16 text-gray-300 mx-auto mb-4"></i>
+                <p class="text-gray-600">No customers found matching your criteria.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Customer Details Drawer -->
+    <div id="customer-drawer" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" id="drawer-overlay"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl overflow-y-auto drawer-enter">
+            <div class="p-6">
+                <!-- Drawer Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-brand-dark">Customer Details</h2>
+                    <button id="close-drawer" class="p-2 rounded-full hover:bg-gray-200">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+
+                <!-- Customer Profile -->
+                <div id="customer-profile" class="space-y-6">
+                    <!-- Loading State -->
+                    <div id="profile-loading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
+                        <p class="text-gray-600">Loading customer details...</p>
+                    </div>
+
+                    <!-- Customer Content (will be populated dynamically) -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-cream border-t border-gray-700 mt-auto">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-red transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-red transition-colors">About Us</a></li>
+                        <li><a href="contact-us.html" class="text-gray-400 hover:text-brand-red transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-red transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-red transition-colors">Terms & Conditions</a></li>

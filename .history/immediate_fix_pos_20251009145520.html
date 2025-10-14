@@ -1,0 +1,124 @@
+<!-- IMMEDIATE FIX FOR COUPON COLUMNS ERROR -->
+<!-- This version temporarily removes coupon columns from the order insert until you run the SQL -->
+
+<script>
+// TEMPORARY FIX: Modified finalizeOrder function that doesn't use coupon columns
+async function finalizeOrder() {
+    try {
+        // 1. Deduct from inventory
+        currentOrder.forEach(orderItem => {
+            const menuItem = Object.values(menu).flat().find(m => m.name === orderItem.name);
+            if (menuItem && menuItem.recipe && menuItem.recipe[orderItem.variant]) {
+                const recipeForVariant = menuItem.recipe[orderItem.variant];
+                recipeForVariant.forEach(recipeIngredient => {
+                    const inventoryItem = inventory.find(i => i.name === recipeIngredient.ingredient);
+                    if (inventoryItem) {
+                        inventoryItem.stock -= recipeIngredient.quantity * orderItem.qty;
+                    }
+                });
+            }
+        });
+        saveInventoryToStorage();
+
+        // 2. Calculate totals with discount
+        const subtotal = currentOrder.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const discount = calculateDiscount(subtotal);
+        const grandTotal = subtotal - discount;
+
+        // 3. Save order to Supabase database
+        const paymentMode = document.querySelector('input[name="payment-mode"]:checked').value;
+        const orderType = document.querySelector('input[name="order-type"]:checked').value;
+
+        // TEMPORARY FIX: Insert main order record WITHOUT coupon columns
+        const orderData = {
+            grand_total: grandTotal,
+            payment_mode: paymentMode,
+            order_type: orderType,
+            note: orderNote,
+            status: 'Pending'
+        };
+        
+        // Add customer_id if a customer is selected
+        if (selectedCustomer) {
+            orderData.customer_id = selectedCustomer.user_id;
+        }
+
+        // TEMPORARY: Comment out coupon columns until database is updated
+        // if (appliedCoupon) {
+        //     orderData.coupon_code = appliedCoupon.coupon_code;
+        //     orderData.discount_amount = discount;
+        // }
+
+        const { data: order, error: orderError } = await supabaseClient
+            .from('orders')
+            .insert([orderData])
+            .select()
+            .single();
+
+        if (orderError) {
+            throw new Error(`Failed to save order: ${orderError.message}`);
+        }
+
+        // Insert order items
+        const orderItems = currentOrder.map(item => ({
+            order_id: order.id,
+            item_name: item.name,
+            variant: item.variant,
+            quantity: item.qty,
+            price_per_unit: item.price
+        }));
+
+        const { error: itemsError } = await supabaseClient
+            .from('order_items')
+            .insert(orderItems);
+
+        if (itemsError) {
+            throw new Error(`Failed to save order items: ${itemsError.message}`);
+        }
+
+        // TEMPORARY: Comment out coupon usage tracking until database is updated
+        // 4. Record coupon usage if applied
+        // if (appliedCoupon && selectedCustomer) {
+        //     const { error: couponUsageError } = await supabaseClient
+        //         .from('coupon_usage')
+        //         .insert({
+        //             coupon_id: appliedCoupon.id,
+        //             order_id: order.id,
+        //             customer_id: selectedCustomer.user_id,
+        //             discount_amount: discount
+        //         });
+
+        //     if (couponUsageError) {
+        //         console.error('Error recording coupon usage:', couponUsageError);
+        //     }
+        // }
+
+        // 5. Prepare for printing
+        document.getElementById('final-order-number').textContent = `Order #${order.id}`;
+        prepareReceipt(order.id, paymentMode, orderType);
+        prepareKOT(order.id, paymentMode, orderType);
+        printModal.classList.remove('hidden');
+
+    } catch (error) {
+        console.error('Error finalizing order:', error);
+        alert(`Error finalizing order: ${error.message}. Please try again.`);
+    }
+}
+</script>
+
+<!-- INSTRUCTIONS FOR USER -->
+<h3>🚨 IMMEDIATE FIX INSTRUCTIONS 🚨</h3>
+
+<p><strong>Problem:</strong> The 'coupon_code' column doesn't exist in your database yet.</p>
+
+<p><strong>Solution Steps:</strong></p>
+<ol>
+    <li><strong>Run this SQL in Supabase SQL Editor:</strong>
+        <pre>
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(50),
+ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0;
+        </pre>
+    </li>
+    <li><strong>Wait 2-3 minutes</strong> for schema cache to update</li>
+    <li><strong>Refresh your browser</strong> and test again</li>

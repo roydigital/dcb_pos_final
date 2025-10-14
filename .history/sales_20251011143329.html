@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Sales Report</h1>
+                    <p class="text-gray-600">Delhi Chicken Brothers - Comprehensive Sales Analytics</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='pos.html'" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Back to POS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Date Range Filters -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                    <select id="date-range" class="w-48 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="quarter">This Quarter</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                
+                <div id="custom-date-range" class="hidden">
+                    <div class="flex gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                            <input type="date" id="start-date" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                            <input type="date" id="end-date" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="apply-filter" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Apply Filter
+                </button>
+                
+                <button id="export-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    Export Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-blue-600 font-bold">₹</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Total Sales</p>
+                        <p id="total-sales" class="text-xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="text-green-600 text-xl font-bold">📦</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Orders</p>
+                        <p id="total-orders" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-purple-600 text-xl font-bold">💰</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Average Order Value</p>
+                        <p id="avg-order-value" class="text-2xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-orange-600 text-xl font-bold">📊</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Items Sold</p>
+                        <p id="total-items" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Method Breakdown</h3>
+                <div id="payment-chart-container" class="h-64">
+                    <canvas id="payment-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Daily Sales Trend</h3>
+                <div id="sales-chart-container" class="h-64">
+                    <canvas id="sales-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Performance -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performing Products</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Sold</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Product data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Orders Table -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Detailed Orders</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Order data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl">
+            <div class="flex items-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                <span class="text-gray-700">Loading sales data...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Global variables
+        let ordersData = [];
+        let orderItemsData = [];
+        let filteredOrders = [];
+        let filteredOrderItems = [];
+        
+        // Chart instances
+        let paymentChart = null;
+        let salesChart = null;
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const dateRangeSelect = document.getElementById('date-range');
+        const customDateRange = document.getElementById('custom-date-range');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const applyFilterBtn = document.getElementById('apply-filter');
+        const exportBtn = document.getElementById('export-btn');
+
+        // Supabase Client Setup
+        const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateInputs();
+            loadDataFromSupabase();
+            setupEventListeners();
+        });
+
+        function initializeDateInputs() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            startDateInput.value = today.toISOString().split('T')[0];
+            endDateInput.value = today.toISOString().split('T')[0];
+        }
+
+        function setupEventListeners() {
+            dateRangeSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customDateRange.classList.remove('hidden');
+                } else {
+                    customDateRange.classList.add('hidden');
+                }
+            });
+
+            applyFilterBtn.addEventListener('click', applyFilters);
+            exportBtn.addEventListener('click', exportReport);
+        }
+
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+            document.body.classList.add('loading');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+            document.body.classList.remove('loading');
+        }
+
+        async function loadDataFromSupabase() {
+            showLoading();
+            
+            try {
+                // Fetch orders data from Supabase
+                const { data: orders, error: ordersError } = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+
+                if (ordersError) {
+                    throw new Error(`Failed to fetch orders: ${ordersError.message}`);
+                }
+
+                // Fetch order items data from Supabase
+                const { data: orderItems, error: itemsError } = await supabaseClient
+                    .from('order_items')
+                    .select('*')
+                    .order('order_id', { ascending: true });
+
+                if (itemsError) {
+                    throw new Error(`Failed to fetch order items: ${itemsError.message}`);
+                }
+
+                // Store the data
+                ordersData = orders || [];
+                orderItemsData = orderItems || [];
+
+                console.log(`Loaded ${ordersData.length} orders and ${orderItemsData.length} order items from Supabase`);
+
+                // Apply default filter (today)
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading data from Supabase:', error);
+                alert(`Error loading sales data: ${error.message}. Please check the console for details.`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+
+        function applyFilters() {
+            showLoading();
+            
+            setTimeout(() => {
+                try {
+                    const dateRange = dateRangeSelect.value;
+                    const startDate = startDateInput.value;
+                    const endDate = endDateInput.value;
+                    
+                    // Filter data based on date range
+                    filteredOrders = filterOrdersByDate(ordersData, dateRange, startDate, endDate);
+                    filteredOrderItems = orderItemsData.filter(item => 
+                        filteredOrders.some(order => order.id === item.order_id)
+                    );
+                    
+                    updateDashboard();
+                    updateCharts();
+                    updateProductTable();
+                    updateOrdersTable();
+                } catch (error) {
+                    console.error('Error applying filters:', error);
+                } finally {
+                    hideLoading();
+                }
+            }, 500);
+        }
+
+        function filterOrdersByDate(orders, dateRange, startDate, endDate) {
+            const now = new Date();
+            let filtered = [...orders];
+            
+            switch (dateRange) {
+                case 'today':
+                    filtered = orders.filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        return orderDate.toDateString() === now.toDateString();
+                    });
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(now);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    filtered = orders.filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        return orderDate.toDateString() === yesterday.toDateString();
+                    });
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    filtered = orders.filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        return orderDate >= weekAgo && orderDate <= now;
+                    });
+                    break;
+                case 'month':
+                    const monthAgo = new Date(now);
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    filtered = orders.filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        return orderDate >= monthAgo && orderDate <= now;
+                    });
+                    break;
+                case 'custom':
+                    if (startDate && endDate) {
+                        filtered = orders.filter(order => {
+                            const orderDate = new Date(order.created_at.split(' ')[0]);
+                            const start = new Date(startDate);
+                            const end = new Date(endDate);
+                            return orderDate >= start && orderDate <= end;
+                        });
+                    }
+                    break;
+                default:
+                    // Show all data
+                    break;
+            }
+            
+            return filtered;
+        }
+
+        function updateDashboard() {
+            const totalSales = filteredOrders.reduce((sum, order) => sum + order.grand_total, 0);
+            const totalOrders = filteredOrders.length;
+            const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+            const totalItems = filteredOrderItems.reduce((sum, item) => sum + item.quantity, 0);
+            
+            document.getElementById('total-sales').textContent = `₹${totalSales.toLocaleString('en-IN')}`;
+            document.getElementById('total-orders').textContent = totalOrders.toLocaleString('en-IN');
+            document.getElementById('avg-order-value').textContent = `₹${avgOrderValue.toFixed(2)}`;
+            document.getElementById('total-items').textContent = totalItems.toLocaleString('en-IN');
+        }
+
+        function updateCharts() {
+            updatePaymentChart();
+            updateSalesChart();
+        }
+
+        function updatePaymentChart() {
+            const ctx = document.getElementById('payment-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (paymentChart) {
+                paymentChart.destroy();
+            }
+            
+            const paymentMethods = {};
+            filteredOrders.forEach(order => {
+                paymentMethods[order.payment_mode] = (paymentMethods[order.payment_mode] || 0) + 1;
+            });
+            
+            const labels = Object.keys(paymentMethods);
+            const data = Object.values(paymentMethods);
+            
+            paymentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#3B82F6',
+                            '#10B981',
+                            '#8B5CF6',
+                            '#F59E0B',
+                            '#EF4444'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Payment Method Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSalesChart() {
+            const ctx = document.getElementById('sales-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (salesChart) {
+                salesChart.destroy();
+            }
+            
+            // Group sales by date
+            const salesByDate = {};
+            filteredOrders.forEach(order => {
+                const date = order.created_at.split(' ')[0];
+                salesByDate[date] = (salesByDate[date] || 0) + order.grand_total;
+            });
+            
+            const labels = Object.keys(salesByDate).sort();
+            const data = labels.map(date => salesByDate[date]);
+            
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Sales (₹)',
+                        data: data,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Sales Trend'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateProductTable() {
+            const tbody = document.getElementById('products-table-body');
+            tbody.innerHTML = '';
+            
+            // Group items by product and variant
+            const productStats = {};
+            filteredOrderItems.forEach(item => {
+                const key = `${item.item_name}|${item.variant}`;
+                if (!productStats[key]) {
+                    productStats[key] = {
+                        item_name: item.item_name,
+                        variant: item.variant,
+                        quantity: 0,
+                        revenue: 0,
+                        count: 0
+                    };
+                }
+                productStats[key].quantity += item.quantity;
+                productStats[key].revenue += item.quantity * item.price_per_unit;
+                productStats[key].count += 1;
+            });
+            
+            // Convert to array and sort by revenue
+            const topProducts = Object.values(productStats)
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10);
+            
+            topProducts.forEach(product => {
+                const avgPrice = product.revenue / product.quantity;
+                const row = document.createElement('tr');
+                row.className = 'fade-in';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.item_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.variant}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.quantity}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹${product.revenue.toLocaleString('en-IN')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹${avgPrice.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateOrdersTable() {
+            const tbody = document.getElementById('orders-table-body');
+            tbody.innerHTML = '';
+            
+            filteredOrders.slice(0, 20).forEach(order => {
+                const orderItems = filteredOrderItems.filter(item => item.order_id === order.id);
+                const itemsText = orderItems.map(item => 
+                    `${item.quantity}x ${item.item_name} (${item.variant})`
+                ).join(', ');
+                
+                const row = document.createElement('tr');
+                row.className = 'fade-in';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDateTime(order.created_at)}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${itemsText}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.payment_mode}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹${order.grand_total}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${order.note || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleDateString('en-IN') + ' ' + date.toLocaleTimeString('en-IN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        function exportReport() {
+            // Simple export functionality - in a real app, this would generate a proper CSV/PDF
+            alert('Export functionality would generate a comprehensive sales report in CSV/PDF format. This would include all filtered data, charts, and product performance metrics.');
+        }
+    </script>
+</body>
+</html>

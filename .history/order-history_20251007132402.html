@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FDF3E7;
+        }
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .focus\:ring-brand-red:focus {
+            --tw-ring-color: var(--brand-red);
+        }
+        .order-card {
+            transition: all 0.3s ease;
+        }
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-delivered { background-color: #DCFCE7; color: #166534; }
+        .status-out-for-delivery { background-color: #FEF3C7; color: #92400E; }
+        .status-preparing { background-color: #DBEAFE; color: #1E40AF; }
+        .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+        .status-pending { background-color: #F3F4F6; color: #374151; }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-brand-cream sticky top-0 z-40 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="profile.html" class="text-sm font-medium hover:text-brand-red transition-colors">← Back to Profile</a>
+                <button id="signout-button" class="bg-brand-red text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">Order History</h1>
+                <p class="text-gray-600">Track your past orders and reorder your favorites</p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-brand-red" id="total-orders-count">0</div>
+                    <div class="text-sm text-gray-600">Total Orders</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-green-600" id="delivered-orders-count">0</div>
+                    <div class="text-sm text-gray-600">Delivered</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="pending-orders-count">0</div>
+                    <div class="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-brand-red" id="total-spent">₹0</div>
+                    <div class="text-sm text-gray-600">Total Spent</div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="flex flex-wrap gap-2">
+                        <button class="filter-btn active px-4 py-2 rounded-full bg-brand-red text-white text-sm font-medium" data-filter="all">
+                            All Orders
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200" data-filter="delivered">
+                            Delivered
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200" data-filter="preparing">
+                            Preparing
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200" data-filter="out-for-delivery">
+                            Out for Delivery
+                        </button>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="search-orders" placeholder="Search orders..." 
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-brand-red focus:border-brand-red">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div id="orders-container">
+                <!-- Orders will be dynamically loaded here -->
+                <div class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading your orders...</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="shopping-bag" class="h-12 w-12 text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">No orders yet</h3>
+                <p class="text-gray-600 mb-6">Start your first order and enjoy our delicious chicken!</p>
+                <a href="index.html" class="bg-brand-red text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all duration-300 inline-flex items-center gap-2">
+                    <i data-lucide="utensils" class="h-5 w-5"></i>
+                    Start Ordering
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Order Details Modal -->
+    <div id="order-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-bold text-brand-dark">Order Details</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]" id="modal-content">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red"></div>
+            <span class="text-brand-dark font-medium">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase Client Setup
+        const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // DOM Elements
+        const ordersContainer = document.getElementById('orders-container');
+        const emptyState = document.getElementById('empty-state');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const orderDetailsModal = document.getElementById('order-details-modal');
+        const closeModal = document.getElementById('close-modal');
+        const modalContent = document.getElementById('modal-content');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const searchInput = document.getElementById('search-orders');
+
+        // Initialize lucide icons
+        lucide.createIcons();
+
+        // Order status mapping
+        const statusConfig = {
+            'pending': { class: 'status-pending', text: 'Pending', icon: 'clock' },
+            'preparing': { class: 'status-preparing', text: 'Preparing', icon: 'chef-hat' },
+            'out-for-delivery': { class: 'status-out-for-delivery', text: 'Out for Delivery', icon: 'truck' },
+            'delivered': { class: 'status-delivered', text: 'Delivered', icon: 'check-circle' },
+            'cancelled': { class: 'status-cancelled', text: 'Cancelled', icon: 'x-circle' }
+        };
+
+        // Check authentication and load orders
+        async function initializeOrderHistory() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            await loadOrders(session.user.id);
+        }
+
+        // Load orders from database
+        async function loadOrders(userId) {
+            try {
+                loadingSpinner.classList.remove('hidden');
+
+                // Get customer ID first
+                const { data: customer, error: customerError } = await supabaseClient
+                    .from('customers')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (customerError || !customer) {
+                    console.error('Customer not found:', customerError);
+                    showEmptyState();
+                    return;
+                }
+
+                // Get orders with order items
+                const { data: orders, error } = await supabaseClient
+                    .from('orders')
+                    .select(`
+                        *,
+                        order_items (
+                            *,
+                            menu_items (
+                                name,
+                                price,
+                                category
+                            )
+                        )
+                    `)
+                    .eq('customer_id', customer.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error loading orders:', error);
+                    showEmptyState();
+                    return;
+                }
+
+                if (orders && orders.length > 0) {
+                    displayOrders(orders);
+                    updateOrderStats(orders);
+                } else {
+                    showEmptyState();
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showEmptyState();
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // Display orders in the container
+        function displayOrders(orders) {
+            ordersContainer.innerHTML = '';
+            
+            orders.forEach(order => {
+                const orderCard = createOrderCard(order);
+                ordersContainer.appendChild(orderCard);
+            });
+        }
+
+        // Create order card HTML
+        function createOrderCard(order) {
+            const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const status = order.status || 'pending';
+            const statusConfig = getStatusConfig(status);
+            const totalItems = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
+            const orderCard = document.createElement('div');
+            orderCard.className = 'bg-white rounded-xl shadow-lg p-6 mb-6 order-card';
+            orderCard.setAttribute('data-order-id', order.id);
+            orderCard.setAttribute('data-status', status);
+            orderCard.setAttribute('data-search-text', `${order.id} ${orderDate} ${status}`.toLowerCase());
+
+            orderCard.innerHTML = `
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                            <div>
+                                <h3 class="font-bold text-lg text-brand-dark">Order #${order.id}</h3>
+                                <p class="text-gray-600 text-sm">${orderDate}</p>
+                            </div>
+                            <span class="status-badge ${statusConfig.class} inline-flex items-center gap-1 w-fit">
+                                <i data-lucide="${statusConfig.icon}" class="h-3 w-3"></i>
+                                ${statusConfig.text}
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Items:</span>
+                                <span class="font-medium ml-1">${totalItems}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Total:</span>
+                                <span class="font-medium ml-1">₹${order.total_amount || '0'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Payment:</span>
+                                <span class="font-medium ml-1 capitalize">${order.payment_method || 'card'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Type:</span>
+                                <span class="font-medium ml-1 capitalize">${order.order_type || 'delivery'}</span>
+                            </div>
+                        </div>
+
+                        ${order.order_items && order.order_items.length > 0 ? `
+                        <div class="mt-4">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Items:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${order.order_items.slice(0, 3).map(item => `
+                                    <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                                        ${item.menu_items?.name || 'Item'} × ${item.quantity}
+                                    </span>
+                                `).join('')}
+                                ${order.order_items.length > 3 ? `
+                                    <span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                                        +${order.order_items.length - 3} more
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button class="view-details-btn bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all text-sm font-medium flex items-center gap-2">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                            View Details
+                        </button>
+                        ${status === 'delivered' ? `
+                        <button class="reorder-btn bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all text-sm font-medium flex items-center gap-2">
+                            <i data-lucide="repeat" class="h-4 w-4"></i>
+                            Reorder
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners
+            const viewDetailsBtn = orderCard.querySelector('.view-details-btn');
+            const reorderBtn = orderCard.querySelector('.reorder-btn');
+
+            viewDetailsBtn.addEventListener('click', () => showOrderDetails(order));
+            if (reorderBtn) {
+                reorderBtn.addEventListener('click', () => handleReorder(order));
+            }
+
+            // Re-initialize icons in the new card
+            lucide.createIcons();
+
+            return orderCard;
+        }
+
+        // Get status configuration
+        function getStatusConfig(status) {
+            return statusConfig[status] || statusConfig.pending;
+        }
+
+        // Update order statistics
+        function updateOrderStats(orders) {
+            const totalOrders = orders.length;
+            const deliveredOrders = orders.filter(order => order.status === 'delivered').length;
+            const pendingOrders = orders.filter(order => 
+                ['pending', 'preparing', 'out-for-delivery'].includes(order.status)
+            ).length;
+            const totalSpent = orders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+
+            document.getElementById('total-orders-count').textContent = totalOrders;
+            document.getElementById('delivered-orders-count').textContent = deliveredOrders;
+            document.getElementById('pending-orders-count').textContent = pendingOrders;
+            document.getElementById('total-spent').textContent = `₹${Math.round(totalSpent)}`;
+        }
+
+        // Show order details in modal
+        function showOrderDetails(order) {
+            const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const status = getStatusConfig(order.status || 'pending');
+
+            modalContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Order Header -->
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-lg font-bold text-brand-dark">Order #${order.id}</h4>
+                            <p class="text-gray-600">${orderDate}</p>
+                        </div>
+                        <span class="status-badge ${status.class} inline-flex items-center gap-1">
+                            <i data-lucide="${status.icon}" class="h-3 w-3"></i>
+                            ${status.text}
+                        </span>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
+                        <div>
+                            <span class="text-gray-600 text-sm">Total Amount</span>
+                            <p class="font-semibold text-lg">₹${order.total_amount || '0'}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 text-sm">Payment Method</span>
+                            <p class="font-semibold capitalize">${order.payment_method || 'card'}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 text-sm">Order Type</span>
+                            <p class="font-semibold capitalize">${order.order_type || 'delivery'}</p>
+                        </div>
+                        <div>
+                            <span class="text-gray-600 text-sm">Items Count</span>
+                            <p class="font-semibold">${order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0}</p>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <div>
+                        <h5 class="font-semibold text-brand-dark mb-3">Order Items</h5>
+                        <div class="space-y-3">
+                            ${order.order_items && order.order_items.length > 0 ? 
+                                order.order_items.map(item => `
+                                    <div class="flex justify-between items-center py-2 border-b">
+                                        <div class="flex-1">
+                                            <p class="font-medium">${item.menu_items?.name || 'Item'}</p>
+                                            <p class="text-sm text-gray-600">${item.menu_items?.category || 'Category'}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-medium">₹${item.price || '0'} × ${item.quantity}</p>
+                                            <p class="font-semibold">₹${(item.price * item.quantity) || '0'}</p>
+                                        </div>
+                                    </div>
+                                `).join('') 
+                                : '<p class="text-gray-500 text-center py-4">No items found</p>'
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Order Timeline -->
+                    <div>
+                        <h5 class="font-semibold text-brand-dark mb-3">Order Timeline</h5>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm">Order placed - ${new Date(order.created_at).toLocaleTimeString()}</span>
+                            </div>
+                            ${order.status === 'delivered' ? `
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm">Order delivered - ${new Date(order.updated_at || order.created_at).toLocaleTimeString()}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    ${order.status === 'delivered' ? `
+                    <div class="flex gap-2">

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi Chicken Brothers - Authentic Taste from Delhi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #FDF3E7; /* Cream background from logo */
+        }
+        /* Custom styles inspired by the logo */
+        :root {
+            --brand-red: #D12727;
+            --brand-dark: #2C2C2C;
+            --brand-cream: #FDF3E7;
+            --brand-light-cream: #FFFBF5;
+        }
+        .bg-brand-red { background-color: var(--brand-red); }
+        .text-brand-red { color: var(--brand-red); }
+        .border-brand-red { border-color: var(--brand-red); }
+        .bg-brand-dark { background-color: var(--brand-dark); }
+        .text-brand-dark { color: var(--brand-dark); }
+        .bg-brand-cream { background-color: var(--brand-cream); }
+        .text-brand-cream { color: var(--brand-cream); }
+        .bg-brand-light-cream { background-color: var(--brand-light-cream); }
+
+        /* Custom scrollbar for a more polished look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--brand-cream);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-red);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a81f1f;
+        }
+        .menu-card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .nav-item {
+            position: relative;
+            transition: color 0.3s;
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--brand-red);
+            transition: width 0.3s;
+        }
+        .nav-item:hover::after {
+            width: 100%;
+        }
+        /* Style for active category button */
+        .category-btn-active {
+            background-color: var(--brand-red);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(209, 39, 39, 0.3);
+        }
+
+        /* Cart animation */
+        .cart-item-enter {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        .cart-item-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 300ms, transform 300ms;
+        }
+    </style>
+</head>
+<body class="text-brand-dark">
+
+    <!-- App Container -->
+    <div id="app" class="relative">
+        
+        <!-- Header -->
+        <header class="bg-brand-cream sticky top-0 z-40 shadow-md">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <a href="#" class="flex items-center gap-2">
+                    <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                    <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+                </a>
+                <nav class="hidden md:flex items-center gap-6 font-medium">
+                    <a href="#menu" class="nav-item">Menu</a>
+                    <a href="#about" class="nav-item">About Us</a>
+                    <a href="#contact" class="nav-item">Contact</a>
+                </nav>
+                    <div class="flex items-center gap-4">
+                        <div id="auth-container"></div>
+                        <button id="cart-button" class="relative p-2 rounded-full hover:bg-red-100 transition-colors">
+                            <i data-lucide="shopping-cart" class="h-6 w-6"></i>
+                            <span id="cart-count" class="absolute -top-1 -right-1 bg-brand-red text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                        </button>
+                        <button id="mobile-menu-button" class="md:hidden p-2 rounded-full hover:bg-red-100 transition-colors">
+                            <i data-lucide="menu" class="h-6 w-6"></i>
+                        </button>
+                    </div>
+            </div>
+        </header>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="fixed top-0 right-0 h-full w-64 bg-brand-light-cream shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="p-4 flex justify-end">
+                <button id="close-mobile-menu" class="p-2 rounded-full hover:bg-red-100">
+                    <i data-lucide="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            <nav class="flex flex-col items-center gap-6 mt-8 font-medium text-lg">
+                <a href="#menu" class="mobile-nav-link">Menu</a>
+                <a href="#about" class="mobile-nav-link">About Us</a>
+                <a href="#contact" class="mobile-nav-link">Contact</a>
+            </nav>
+        </div>
+        <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Hero Section -->
+            <section class="relative h-[60vh] md:h-[70vh] bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?q=80&w=1980&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
+                <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                <div class="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-start text-white">
+                    <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-4 text-shadow">An Authentic Taste<br>Legacy from Delhi.</h1>
+                    <p class="text-lg md:text-xl mb-8 max-w-lg text-shadow-sm">Freshly prepared, rich in flavor. Straight from our kitchen to your plate.</p>
+                    <a href="#menu" class="bg-brand-red text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg">
+                        Explore Menu
+                    </a>
+                </div>
+            </section>
+
+            <!-- Menu Section -->
+            <section id="menu" class="py-16 md:py-24">
+                <div class="container mx-auto px-4">
+                    <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">Our Menu</h2>
+                    <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">Discover a variety of dishes, each crafted with authentic spices and traditional recipes from the heart of Delhi.</p>
+                    
+                    <!-- Category Filters -->
+                    <div id="category-filters" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-12">
+                         <!-- Categories will be injected here by JS -->
+                    </div>
+
+                    <!-- Menu Grid -->
+                    <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                        <!-- Menu items will be injected here by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Us Section -->
+            <section id="about" class="bg-brand-light-cream py-16 md:py-24">
+                <div class="container mx-auto px-4">
+                    <div class="flex flex-col md:flex-row items-center gap-12">
+                        <div class="w-full md:w-1/2">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="DCB Chefs" class="rounded-lg shadow-xl mx-auto max-w-xs md:max-w-sm">
+                        </div>
+                        <div class="w-full md:w-1/2 text-center md:text-left">
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4">The Story of DCB</h2>
+                            <p class="text-gray-600 leading-relaxed mb-4">
+                                Delhi Chicken Brothers (DCB) was born from a passion for authentic Delhi-style cuisine. Our founders, two brothers with roots in Old Delhi's bustling food streets, wanted to bring the true flavors of their childhood to the world. 
+                            </p>
+                            <p class="text-gray-600 leading-relaxed">
+                                We use generations-old recipes, fresh ingredients, and a lot of love to create dishes that are both comforting and unforgettable. It's not just food; it's a legacy.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer id="contact" class="bg-brand-dark text-brand-cream py-12">
+            <div class="container mx-auto px-4 text-center">
+                <h3 class="text-2xl font-bold mb-4">Delhi Chicken Brothers</h3>
+                <p class="mb-2">AAR City Regency Park Market</p>
+                <p class="mb-6">Call for orders: <a href="tel:9211022131" class="text-brand-red font-bold hover:underline">9211022131</a></p>
+                <div class="flex justify-center gap-6 mb-8">
+                    <a href="https://link.zomato.com/xqzv/rshare?id=11881452130563f13" class="hover:text-brand-red transition-colors" aria-label="Zomato"><img src="https://dcbchicken.com/images/zomato.png" class="h-8 grayscale hover:grayscale-0 transition-all" alt="Zomato"></a>
+                    <a href="https://www.swiggy.com/direct/brand/691868?source=swiggy-direct&subSource=google" class="hover:text-brand-red transition-colors" aria-label="Swiggy"><img src="https://dcbchicken.com/images/swiggy.png" class="h-8 grayscale hover:grayscale-0 transition-all" alt="Swiggy"></a>
+                </div>
+                <p class="text-sm text-gray-400">&copy; 2024 Delhi Chicken Brothers. All Rights Reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Shopping Cart Sidebar -->
+        <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-md bg-brand-light-cream shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                <h3 class="text-xl font-bold">Your Order</h3>
+                <button id="close-cart" class="p-2 rounded-full hover:bg-gray-200">
+                    <i data-lucide="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            <div id="cart-items" class="flex-grow p-4 overflow-y-auto">
+                <!-- Cart items will be injected here -->
+                 <div id="empty-cart-message" class="text-center text-gray-500 mt-8">
+                    <i data-lucide="shopping-basket" class="h-16 w-16 mx-auto text-gray-300 mb-4"></i>
+                    Your cart is empty. <br> Add some delicious food to get started!
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 bg-white">
+                <div class="flex justify-between items-center mb-2 font-medium">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">₹0.00</span>
+                </div>
+                <div class="flex justify-between items-center mb-4 text-gray-500 text-sm">
+                    <span>Taxes & Charges</span>
+                    <span id="cart-taxes">₹0.00</span>
+                </div>
+                <div class="flex justify-between items-center mb-6 font-bold text-lg">
+                    <span>Total</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+
+                <!-- Checkout Options -->
+                <div id="checkout-options" class="mb-4">
+                    <div class="mb-4">
+                        <h4 class="font-bold mb-2">Order Type</h4>
+                        <div class="flex justify-around">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="orderType" value="Dine-in" class="form-radio text-brand-red" checked>
+                                <span>Dine-in</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="orderType" value="Takeaway" class="form-radio text-brand-red">
+                                <span>Takeaway</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="orderType" value="Delivery" class="form-radio text-brand-red">
+                                <span>Delivery</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">Payment Method</h4>
+                        <div class="flex justify-around">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="UPI" class="form-radio text-brand-red" checked>
+                                <span>UPI</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="Cash" class="form-radio text-brand-red">
+                                <span>Cash</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="checkout-button" class="w-full bg-brand-red text-white font-bold py-3 rounded-lg hover:bg-opacity-90 transition-all duration-300 flex items-center justify-center gap-2">
+                    <i data-lucide="lock" class="h-5 w-5"></i>
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+        <div id="cart-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Supabase Client Setup
+            const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Initialize lucide icons
+            lucide.createIcons();
+
+            let menuData = [];
+            let cart = [];
+            
+            const menuGrid = document.getElementById('menu-grid');
+            const categoryFilters = document.getElementById('category-filters');
+            
+            async function fetchAndRenderMenu() {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('menu_items')
+                        .select(`
+                            id,
+                            name,
+                            category,
+                            prices,
+                            image_url
+                        `)
+                        .order('id');
+
+                    if (error) throw error;
+
+                    // Transform the data to match the expected structure
+                    menuData = data.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        category: item.category,
+                        description: '', // description column does not exist in menu_items table
+                        image: item.image_url || 'https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Available',
+                        options: Object.entries(item.prices || {}).map(([name, price]) => ({
+                            name: name,
+                            price: price
+                        }))
+                    }));
+                    
+                    renderCategories();
+                    renderMenu();
+
+                } catch (err) {
+                    console.error("Error fetching menu data:", err);
+                    menuGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Failed to load menu. Please try again later.</p>`;
+                }
+            }
+            
+            function renderMenu(filter = 'All') {
+                menuGrid.innerHTML = '';
+                const filteredData = filter === 'All' ? menuData : menuData.filter(item => item.category === filter);
+                
+                if (filteredData.length === 0 && filter === 'All') {
+                    menuGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">Loading menu...</p>`;
+                    return;
+                }
+                
+                if (filteredData.length === 0) {
+                    menuGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">No items in this category.</p>`;
+                    return;
+                }
+
+                filteredData.forEach(item => {
+                    const optionsHtml = item.options.map((option, index) => `
+                        <label for="option-${item.id}-${index}" class="flex items-center space-x-2 text-sm">
+                            <input type="radio" id="option-${item.id}-${index}" name="option-${item.id}" value="${index}" ${index === 0 ? 'checked' : ''} data-price="${option.price}" class="form-radio text-brand-red focus:ring-brand-red">
+                            <span>${option.name}</span>
+                        </label>
+                    `).join('');
+
+                    const menuCard = document.createElement('div');
+                    menuCard.className = 'bg-brand-light-cream rounded-xl overflow-hidden shadow-lg transition-all duration-300 menu-card-hover flex flex-col';
+                    menuCard.innerHTML = `
+                        <div class="relative">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                        </div>
+                        <div class="p-4 flex flex-col flex-grow">
+                            <h3 class="text-lg font-bold mb-1">${item.name}</h3>
+                            <p class="text-sm text-gray-500 mb-4 flex-grow">${item.description}</p>
+                            <div class="flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                                ${optionsHtml}
+                            </div>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-xl font-bold text-brand-red" id="price-${item.id}">₹${item.options[0].price.toFixed(2)}</span>
+                                <button class="add-to-cart-btn bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors text-sm" data-id="${item.id}">Add to Cart</button>
+                            </div>
+                        </div>
+                    `;
+                    menuGrid.appendChild(menuCard);
+                    
+                    // Add event listeners for radio buttons to update price
+                    const radioButtons = menuCard.querySelectorAll(`input[name="option-${item.id}"]`);
+                    radioButtons.forEach(radio => {
+                        radio.addEventListener('change', (event) => {
+                            const price = event.target.dataset.price;
+                            menuCard.querySelector(`#price-${item.id}`).textContent = `₹${parseFloat(price).toFixed(2)}`;
+                        });
+                    });
+                });
+            }
+
+            function renderCategories() {
+                const categories = ['All', ...new Set(menuData.map(item => item.category))];
+                categoryFilters.innerHTML = categories.map((category, index) => `
+                    <button class="category-btn px-4 py-2 rounded-full font-medium text-sm transition-all duration-300 ${index === 0 ? 'category-btn-active' : 'bg-white text-gray-700 hover:bg-gray-100'}" data-category="${category}">
+                        ${category}
+                    </button>
+                `).join('');
+                
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelector('.category-btn-active').classList.remove('category-btn-active', 'bg-brand-red', 'text-white');
+                        e.target.classList.add('category-btn-active', 'bg-brand-red', 'text-white');
+                        renderMenu(e.target.dataset.category);
+                    });
+                });
+            }
+
+            function addToCart(itemId, selectedOptionIndex) {
+                // The most robust way to find the item is to compare IDs as strings,
+                // as data-id attributes are strings, avoiding any type mismatch issues.
+                const item = menuData.find(i => String(i.id) === String(itemId));
+                
+                // Defensive check: Ensure the item exists in our data.
+                if (!item) {
+                    console.error(`Item with ID ${itemId} not found in menuData.`);
+                    alert('Sorry, an error occurred and we could not add that item to your cart.');
+                    return;
+                }
+
+                const selectedOption = item.options[selectedOptionIndex];
+
+                // Defensive check: Ensure the selected option is valid.
+                if (!selectedOption) {
+                    console.error(`Selected option index ${selectedOptionIndex} is not valid for item ${itemId}.`);
+                    alert('Sorry, an error occurred with the selected option. Please try again.');
+                    return;
+                }
+
+                const cartItemId = `${itemId}-${selectedOptionIndex}`;
+                const existingItem = cart.find(i => i.cartId === cartItemId);
+
+                if (existingItem) {
+                    existingItem.quantity++;
+                } else {
+                    cart.push({
+                        cartId: cartItemId,
+                        id: item.id,
+                        name: item.name,
+                        option: selectedOption.name,
+                        price: selectedOption.price,
+                        quantity: 1,
+                        image: item.image,
+                    });
+                }
+                updateCart();
+            }
+
+            function updateCart() {
+                const cartItemsContainer = document.getElementById('cart-items');
+                const cartCount = document.getElementById('cart-count');
+                
+                cartCount.textContent = cart.reduce((total, item) => total + item.quantity, 0);
+                
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = `
+                        <div id="empty-cart-message" class="text-center text-gray-500 mt-8">
+                            <i data-lucide="shopping-basket" class="h-16 w-16 mx-auto text-gray-300 mb-4"></i>
+                            Your cart is empty. <br> Add some delicious food to get started!
+                        </div>
+                    `;
+                    lucide.createIcons();
+                } else {
+                    cartItemsContainer.innerHTML = cart.map(item => `
+                        <div class="flex items-center gap-4 mb-4 p-2 rounded-lg bg-white cart-item-enter-active">
+                            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md">
+                            <div class="flex-grow">
+                                <p class="font-bold text-sm">${item.name}</p>
+                                <p class="text-xs text-gray-500">${item.option}</p>
+                                <p class="font-semibold text-brand-red text-sm">₹${item.price.toFixed(2)}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="quantity-change p-1 rounded-full bg-gray-200 hover:bg-gray-300" data-cartid="${item.cartId}" data-change="-1">-</button>
+                                <span class="font-bold w-6 text-center">${item.quantity}</span>
+                                <button class="quantity-change p-1 rounded-full bg-gray-200 hover:bg-gray-300" data-cartid="${item.cartId}" data-change="1">+</button>
+                            </div>
+                             <button class="remove-from-cart text-gray-400 hover:text-red-500" data-cartid="${item.cartId}">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                     lucide.createIcons();
+                }
+                updateCartTotals();
+            }
+            
+            function updateCartTotals() {
+                 const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                 const taxes = subtotal * 0.05; // 5% tax
+                 const total = subtotal + taxes;
+
+                 document.getElementById('cart-subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+                 document.getElementById('cart-taxes').textContent = `₹${taxes.toFixed(2)}`;
+                 document.getElementById('cart-total').textContent = `₹${total.toFixed(2)}`;
+            }
+
+            // Professional solution for add to cart functionality using event delegation.
+            // This is more robust and avoids issues with listeners on dynamically created elements.
+            document.getElementById('menu-grid').addEventListener('click', e => {
+                const button = e.target.closest('.add-to-cart-btn');
+                if (!button) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const itemId = button.dataset.id; // Keep as string for consistent comparison
+                const menuCard = button.closest('.menu-card-hover');
+                
+                if (!menuCard) {
+                    console.error('Menu card not found for item:', itemId);
+                    return;
+                }
+                
+                const radioButtons = menuCard.querySelectorAll(`input[name="option-${itemId}"]`);
+                let selectedRadio = Array.from(radioButtons).find(r => r.checked);
+                
+                if (!selectedRadio && radioButtons.length > 0) {
+                    selectedRadio = radioButtons[0];
+                    selectedRadio.checked = true;
+                }
+                
+                if (!selectedRadio) {
+                    console.error('No option selected or available for item:', itemId);
+                    return;
+                }
+                
+                const selectedOptionIndex = parseInt(selectedRadio.value);
+                addToCart(itemId, selectedOptionIndex);
+                
+                // Professional visual feedback
+                const originalText = button.textContent;
+                button.textContent = '✓ Added';
+                button.classList.add('bg-green-600');
+                button.classList.remove('bg-brand-dark');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-600');
+                    button.classList.add('bg-brand-dark');
+                }, 1500);
+            });
+            
+            // Event delegation for cart actions (quantity change, remove)
+            document.getElementById('cart-items').addEventListener('click', e => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const cartId = target.dataset.cartid;
+                
+                if (target.classList.contains('quantity-change')) {
+                    const change = parseInt(target.dataset.change);
+                    const item = cart.find(i => i.cartId === cartId);
+                    if (item) {
+                        item.quantity += change;
+                        if (item.quantity <= 0) {
+                            cart = cart.filter(i => i.cartId !== cartId);
+                        }
+                    }
+                } else if (target.classList.contains('remove-from-cart')) {
+                    cart = cart.filter(i => i.cartId !== cartId);
+                }
+                updateCart();
+            });
+
+            // Mobile Menu Handlers
+            const mobileMenuBtn = document.getElementById('mobile-menu-button');
+            const closeMobileMenuBtn = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+            
+            const openMobileMenu = () => {
+                mobileMenu.classList.remove('translate-x-full');
+                mobileMenuOverlay.classList.remove('hidden');
+            };
+            const closeMobileMenu = () => {
+                mobileMenu.classList.add('translate-x-full');
+                mobileMenuOverlay.classList.add('hidden');
+            };
+
+            mobileMenuBtn.addEventListener('click', openMobileMenu);
+            closeMobileMenuBtn.addEventListener('click', closeMobileMenu);
+            mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+
+            // Cart Sidebar Handlers
+            const cartBtn = document.getElementById('cart-button');
+            const closeCartBtn = document.getElementById('close-cart');
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const cartOverlay = document.getElementById('cart-overlay');
+            const checkoutBtn = document.getElementById('checkout-button');
+            
+            const openCart = () => {
+                cartSidebar.classList.remove('translate-x-full');
+                cartOverlay.classList.remove('hidden');
+            };
+            const closeCart = () => {
+                cartSidebar.classList.add('translate-x-full');
+                cartOverlay.classList.add('hidden');
+            };
+
+            cartBtn.addEventListener('click', openCart);
+            closeCartBtn.addEventListener('click', closeCart);
+            cartOverlay.addEventListener('click', closeCart);
+            checkoutBtn.addEventListener('click', handleCheckout);
+
+            async function handleCheckout() {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+
+                if (!session) {
+                    // Not logged in, redirect to auth page
+                    window.location.href = 'auth.html';
+                    return;
+                }
+
+                if (cart.length === 0) {
+                    alert("Your cart is empty. Please add items before checking out.");
+                    return;
+                }
+
+                // Get selected checkout options
+                const orderType = document.querySelector('input[name="orderType"]:checked').value;
+                const paymentMode = document.querySelector('input[name="paymentMethod"]:checked').value;
+                const note = prompt("Any special instructions? (Optional)");
+
+
+                const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const taxes = subtotal * 0.05;
+                const grandTotal = subtotal + taxes;
+
+                checkoutBtn.disabled = true;
+                checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
+
+                try {
+                    // 1. First, get or create customer record
+                    let customerId;
+                    
+                    // Check if customer exists for this user
+                    const { data: existingCustomer, error: customerCheckError } = await supabaseClient
+                        .from('customers')
+                        .select('id')
+                        .eq('user_id', session.user.id)
+                        .single();
+
+                    if (customerCheckError || !existingCustomer) {
+                        // Customer doesn't exist, create one
+                        const { data: newCustomer, error: createCustomerError } = await supabaseClient
+                            .from('customers')
+                            .insert({
+                                user_id: session.user.id,
+                                email: session.user.email,
+                                first_name: session.user.user_metadata?.first_name || 'Customer',
+                                last_name: session.user.user_metadata?.last_name || '',
+                                mobile_number: '',
+                                building_no: '',
+                                area: '',
+                                city: '',
+                                state: '',
+                                pin_code: '',
+                                landmark: '',
+                                password_hash: 'auto_created_during_order'
+                            })
+                            .select()
+                            .single();
+
+                        if (createCustomerError) throw createCustomerError;
+                        customerId = newCustomer.id;
+                    } else {
+                        customerId = existingCustomer.id;
+                    }
+
+                    // 2. Insert the main order with proper customer_id
+                    const { data: orderData, error: orderError } = await supabaseClient
+                        .from('orders')
+                        .insert({
+                            customer_id: customerId, // Link order to the customer record, not auth user
+                            grand_total: grandTotal.toFixed(2),
+                            payment_mode: paymentMode,
+                            order_type: orderType,
+                            status: 'Pending',
+                            note: note,
+                        })
+                        .select()
+                        .single();
+
+            
+            // Session Management
+            const authContainer = document.getElementById('auth-container');
+
+            async function setupAuthUI() {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    // User is logged in - get profile data to display name
+                    const { data: profile, error } = await supabaseClient
+                        .from('profiles')
+                        .select('first_name, last_name')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    let displayName = session.user.email;
+                    if (profile && profile.first_name) {
+                        displayName = `${profile.first_name} ${profile.last_name || ''}`.trim();
+                    } else if (session.user.user_metadata && session.user.user_metadata.first_name) {
+                        displayName = `${session.user.user_metadata.first_name} ${session.user.user_metadata.last_name || ''}`.trim();
+                    }
+
+                    authContainer.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <a href="profile.html" class="flex items-center gap-2 text-sm font-medium hover:text-brand-red transition-colors group">
+                                <div class="w-8 h-8 bg-brand-red rounded-full flex items-center justify-center text-white text-xs font-bold group-hover:scale-110 transition-transform">
+                                    ${displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                                </div>
+                                <span class="hidden sm:inline">Hi, ${displayName.split(' ')[0]}</span>
+                            </a>
+                            <button id="signout-button" class="bg-brand-red text-white text-sm font-bold py-2 px-3 rounded-full hover:bg-opacity-90 transition-all">
+                                Sign Out
+                            </button>
+                        </div>
+                    `;
+                    document.getElementById('signout-button').addEventListener('click', async () => {
+                        await supabaseClient.auth.signOut();
+                        window.location.reload();
+                    });
+                } else {
+                    // User is not logged in
+                    authContainer.innerHTML = `
+                        <a href="auth.html" class="bg-brand-red text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                            Sign In
+                        </a>
+                    `;
+                }
+            }
+
+
+            // Initial Render - Await rendering before setting up auth to prevent race conditions
+            await fetchAndRenderMenu();
+            updateCart();
+            await setupAuthUI();
+        });
+    </script>
+</body>
+</html>

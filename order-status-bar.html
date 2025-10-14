@@ -1,0 +1,188 @@
+<!-- Order Status Bar Component -->
+<div id="order-status-bar" class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 transform translate-y-full transition-transform duration-300 z-50 hidden">
+  <div class="container mx-auto px-4 py-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <div class="flex-shrink-0">
+          <div class="w-10 h-10 bg-brand-red rounded-full flex items-center justify-center text-white">
+            <i data-lucide="package" class="h-5 w-5"></i>
+          </div>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-semibold text-gray-800 text-sm">Order #<span id="bar-order-id">---</span></h4>
+          <div class="flex items-center space-x-2 mt-1">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <p class="text-xs text-gray-600">Status: <span id="bar-order-status" class="font-medium">---</span></p>
+            <span id="bar-order-time" class="text-xs text-gray-500">Just now</span>
+          </div>
+        </div>
+      </div>
+      <button id="view-order-details" class="bg-brand-red text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors text-sm font-medium flex items-center space-x-2">
+        <i data-lucide="eye" class="h-4 w-4"></i>
+        <span>View Details</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Order Status Bar Management
+class OrderStatusBar {
+  constructor() {
+    this.bar = document.getElementById('order-status-bar');
+    this.orderIdElement = document.getElementById('bar-order-id');
+    this.orderStatusElement = document.getElementById('bar-order-status');
+    this.orderTimeElement = document.getElementById('bar-order-time');
+    this.viewButton = document.getElementById('view-order-details');
+    
+    this.currentOrderId = null;
+    this.supabaseClient = null;
+    this.realtimeSubscription = null;
+    
+    this.initialize();
+  }
+
+  initialize() {
+    // Set up Supabase client
+    const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+    this.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Set up click handler
+    this.viewButton.addEventListener('click', () => {
+      if (this.currentOrderId) {
+        window.location.href = `order-status.html?order_id=${this.currentOrderId}`;
+      }
+    });
+
+    // Check for active orders on page load
+    this.checkActiveOrders();
+  }
+
+  async checkActiveOrders() {
+    try {
+      const { data: { session } } = await this.supabaseClient.auth.getSession();
+      if (!session) return;
+
+      // Get customer record first
+      const { data: customer, error: customerError } = await this.supabaseClient
+        .from('customers')
+        .select('user_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (customerError || !customer) return;
+
+      // Check for active orders (not delivered or cancelled)
+      const { data: orders, error } = await this.supabaseClient
+        .from('orders')
+        .select('id, status, created_at')
+        .eq('customer_id', customer.user_id)
+        .in('status', ['Pending', 'Accepted', 'Ready', 'Out for Delivery'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error || !orders || orders.length === 0) {
+        this.hideBar();
+        return;
+      }
+
+      const activeOrder = orders[0];
+      this.showOrder(activeOrder);
+      this.setupRealtimeUpdates(activeOrder.id);
+
+    } catch (error) {
+      console.error('Error checking active orders:', error);
+    }
+  }
+
+  showOrder(order) {
+    this.currentOrderId = order.id;
+    this.orderIdElement.textContent = order.id;
+    this.orderStatusElement.textContent = order.status;
+    this.orderTimeElement.textContent = this.formatTimeAgo(order.created_at);
+    
+    // Show the bar with animation
+    this.bar.classList.remove('translate-y-full', 'hidden');
+    this.bar.classList.add('translate-y-0');
+    
+    // Reinitialize icons
+    lucide.createIcons();
+  }
+
+  hideBar() {
+    this.bar.classList.remove('translate-y-0');
+    this.bar.classList.add('translate-y-full');
+    
+    // Hide after animation completes
+    setTimeout(() => {
+      this.bar.classList.add('hidden');
+    }, 300);
+    
+    if (this.realtimeSubscription) {
+      this.realtimeSubscription.unsubscribe();
+    }
+  }
+
+  setupRealtimeUpdates(orderId) {
+    if (this.realtimeSubscription) {
+      this.realtimeSubscription.unsubscribe();
+    }
+
+    this.realtimeSubscription = this.supabaseClient
+      .channel(`order-bar-${orderId}`)
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'orders',
+          filter: `id=eq.${orderId}`
+        },
+        (payload) => {
+          const newStatus = payload.new.status;
+          this.orderStatusElement.textContent = newStatus;
+          this.orderTimeElement.textContent = 'Just updated';
+          
+          // If order is delivered or cancelled, hide the bar after a delay
+          if (['Delivered', 'Cancelled', 'Declined'].includes(newStatus)) {
+            setTimeout(() => {
+              this.hideBar();
+            }, 5000); // Hide after 5 seconds
+          }
+        }
+      )
+      .subscribe();
+  }
+
+  formatTimeAgo(timestamp) {
+    const now = new Date();
+    const orderTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+  }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for Supabase to be available
+  if (typeof supabase !== 'undefined') {
+    new OrderStatusBar();
+  } else {
+    // If Supabase isn't loaded yet, wait for it
+    const checkSupabase = setInterval(() => {
+      if (typeof supabase !== 'undefined') {
+        clearInterval(checkSupabase);
+        new OrderStatusBar();
+      }
+    }, 100);
+  }
+});
+</script>

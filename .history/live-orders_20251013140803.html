@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi Chicken Brothers - Live Orders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-accepted { background-color: #dbeafe; color: #1e40af; }
+        .status-ready { background-color: #dcfce7; color: #166534; }
+        .status-delivered { background-color: #f3f4f6; color: #374151; }
+        .status-declined { background-color: #fee2e2; color: #991b1b; }
+        
+        /* Styles for Print */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        
+        .receipt-text {
+             font-family: 'monospace';
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <header class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Delhi Chicken Brothers</h1>
+                    <p class="text-gray-600">Live Orders Dashboard</p>
+                </div>
+                <div class="text-right">
+                    <p id="current-time" class="text-lg font-semibold text-gray-700"></p>
+                    <p class="text-sm text-gray-500">Today's Orders: <span id="total-orders-count" class="font-bold">0</span></p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Date Filters -->
+        <div class="mb-4 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-3">Filter by Date</h2>
+            <div class="flex flex-wrap gap-2 mb-3">
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700" data-range="today">Today</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="yesterday">Yesterday</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="this_week">This Week</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="last_week">Last Week</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="this_month">This Month</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="last_month">Last Month</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="this_year">This Year</button>
+                <button class="date-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200" data-range="custom">Custom</button>
+            </div>
+            <div id="custom-date-range" class="hidden mt-3 p-3 bg-gray-50 rounded-lg">
+                <div class="flex gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                        <input type="date" id="from-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                        <input type="date" id="to-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="apply-custom-date" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Filters -->
+        <div class="mb-6 bg-white p-4 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-3">Filter by Status</h2>
+            <div class="flex flex-wrap gap-2">
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200" data-status="all">All Orders</button>
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium status-pending hover:bg-yellow-200" data-status="Pending">Pending</button>
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium status-accepted hover:bg-blue-200" data-status="Accepted">Accepted</button>
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium status-ready hover:bg-green-200" data-status="Ready">Ready</button>
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium status-delivered hover:bg-gray-200" data-status="Delivered">Delivered</button>
+                <button class="status-filter-btn px-3 py-2 rounded-full text-sm font-medium status-declined hover:bg-red-200" data-status="Declined">Declined</button>
+            </div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div id="orders-container" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Orders will be dynamically inserted here -->
+            <div id="no-orders-message" class="col-span-full text-center py-12 text-gray-500 hidden">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h3 class="mt-4 text-lg font-medium">No orders found</h3>
+                <p class="mt-2">Orders will appear here as they are placed.</p>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">Loading orders...</p>
+        </div>
+    </div>
+
+    <!-- Print Modal -->
+    <div id="print-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <h3 class="text-2xl font-bold mb-2">Print Options</h3>
+            <p class="text-lg font-semibold mb-6 bg-blue-100 text-blue-800 rounded-md py-2" id="print-order-number"></p>
+            <p class="mb-6 text-gray-600">What would you like to print?</p>
+            <div class="space-y-4">
+                <button id="print-receipt-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700">Print Customer Receipt</button>
+                <button id="print-kot-btn" class="w-full bg-gray-700 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-800">Print KOT</button>
+            </div>
+             <button id="close-print-modal-btn" class="mt-8 text-gray-500 hover:text-gray-700">Close</button>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Areas -->
+    <div id="receipt-print-area" class="print-area receipt-text hidden"></div>
+    <div id="kot-print-area" class="print-area receipt-text hidden"></div>
+
+    <!-- Order Details Modal -->
+        <div id="order-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-10">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold">Order Details</h3>
+                        <button id="close-order-details" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                    <div id="order-details-header" class="mt-2">
+                        <!-- Order header info will be inserted here -->
+                    </div>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-96">
+                    <div id="order-items-list">
+                        <!-- Order items will be inserted here -->
+                    </div>
+                    <div id="order-note-display" class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded hidden">
+                        <p class="font-semibold text-yellow-800">Note:</p>
+                        <p id="order-note-text" class="text-yellow-700"></p>
+                    </div>
+                </div>
+                <div class="p-6 border-t bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-600">Current Status:</p>
+                            <p id="current-status-badge" class="text-lg font-semibold"></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div id="status-buttons" class="flex gap-2">
+                                <!-- Status buttons will be inserted here -->
+                            </div>
+                            <button id="edit-order-btn" class="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition-colors">Edit Order</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex gap-2">
+                            <button id="print-receipt-order-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Print Customer Receipt</button>
+                            <button id="print-kot-order-btn" class="bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors">Print KOT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Edit Order Modal -->
+        <div id="edit-order-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[95vh] flex flex-col">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="text-xl font-semibold">Edit Order <span id="edit-order-id-display"></span></h3>
+                    <button id="close-edit-order-modal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div class="flex-grow flex overflow-hidden">
+                    <!-- Menu Section -->
+                    <div class="w-1/2 border-r overflow-y-auto p-4">
+                        <h4 class="text-lg font-bold mb-2">Add Items</h4>
+                        <input type="text" id="edit-menu-search" placeholder="Search menu..." class="w-full p-2 border rounded mb-4">
+                        <div id="edit-menu-container" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Menu items will be loaded here -->
+                        </div>
+                    </div>
+                    <!-- Order Section -->
+                    <div class="w-1/2 flex flex-col p-4">
+                        <h4 class="text-lg font-bold mb-2">Order Items</h4>
+                        <div id="edit-order-items-container" class="flex-grow overflow-y-auto border-b mb-4">
+                            <!-- Current order items will be here -->
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h5 class="font-semibold mb-2">Order Type</h5>
+                                <div id="edit-order-type-container" class="flex gap-4">
+                                    <label class="flex items-center"><input type="radio" name="edit-order-type" value="Dine-in" class="mr-2"> Dine-in</label>
+                                    <label class="flex items-center"><input type="radio" name="edit-order-type" value="Takeaway" class="mr-2"> Takeaway</label>
+                                    <label class="flex items-center"><input type="radio" name="edit-order-type" value="Delivery" class="mr-2"> Delivery</label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold mb-2">Payment Mode</h5>
+                                <div id="edit-payment-mode-container" class="flex gap-4">
+                                    <label class="flex items-center"><input type="radio" name="edit-payment-mode" value="Cash" class="mr-2"> Cash</label>
+                                    <label class="flex items-center"><input type="radio" name="edit-payment-mode" value="UPI" class="mr-2"> UPI</label>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center font-bold text-xl pt-4 border-t">
+                                <span>New Grand Total:</span>
+                                <span id="edit-grand-total">₹0.00</span>
+                            </div>
+                            <button id="save-order-changes-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sound Permission Modal -->
+        <div id="sound-permission-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+                <h3 class="text-2xl font-bold mb-4">Enable Sound Notifications</h3>
+                <p class="text-gray-600 mb-6">Click the button below to allow this page to play sounds for new orders.</p>
+                <button id="enable-sound-btn" class="w-full bg-green-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-green-700">
+                    Enable Sound
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification Sound -->
+        <audio id="notification-sound" loop>
+            <source src="buzzer-or-wrong-answer-20582.mp3" type="audio/mpeg">
+        </audio>
+    
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                // Supabase Client Setup (using same credentials as POS)
+                const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
+                const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+                // DOM Elements
+                const ordersContainer = document.getElementById('orders-container');
+                const noOrdersMessage = document.getElementById('no-orders-message');
+                const loadingState = document.getElementById('loading-state');
+                const currentTimeEl = document.getElementById('current-time');
+                const totalOrdersCountEl = document.getElementById('total-orders-count');
+                const orderDetailsModal = document.getElementById('order-details-modal');
+                const closeOrderDetailsBtn = document.getElementById('close-order-details');
+                const statusFilterBtns = document.querySelectorAll('.status-filter-btn');
+    
+                // Date Filter Elements
+                const dateFilterBtns = document.querySelectorAll('.date-filter-btn');
+                const customDateRange = document.getElementById('custom-date-range');
+                const fromDateInput = document.getElementById('from-date');
+                const toDateInput = document.getElementById('to-date');
+                const applyCustomDateBtn = document.getElementById('apply-custom-date');
+    
+                // Print Elements
+                const printModal = document.getElementById('print-modal');
+                const printOrderNumberEl = document.getElementById('print-order-number');
+                const printReceiptBtn = document.getElementById('print-receipt-btn');
+                const printKotBtn = document.getElementById('print-kot-btn');
+                const closePrintModalBtn = document.getElementById('close-print-modal-btn');
+                const printReceiptOrderBtn = document.getElementById('print-receipt-order-btn');
+                const printKotOrderBtn = document.getElementById('print-kot-order-btn');
+    
+                // Edit Order Elements
+                const editOrderModal = document.getElementById('edit-order-modal');
+                const closeEditOrderModalBtn = document.getElementById('close-edit-order-modal');
+                const editOrderIdDisplay = document.getElementById('edit-order-id-display');
+                const editMenuSearch = document.getElementById('edit-menu-search');
+                const editMenuContainer = document.getElementById('edit-menu-container');
+                const editOrderItemsContainer = document.getElementById('edit-order-items-container');
+                const editGrandTotalEl = document.getElementById('edit-grand-total');
+                const saveOrderChangesBtn = document.getElementById('save-order-changes-btn');
+                const notificationSound = document.getElementById('notification-sound');
+                const soundPermissionModal = document.getElementById('sound-permission-modal');
+                const enableSoundBtn = document.getElementById('enable-sound-btn');
+    
+                // State
+                let allOrders = [];
+                let unacknowledgedOrders = new Set();
+                let currentFilter = 'all';
+                let currentDateRange = 'today';
+                let currentOrderDetails = null;
+                let menu = [];
+                let orderBeingEdited = null;
+    
+                // KIOSK Info
+                const KIOSK_INFO = {
+                name: "Delhi Chicken Brothers",
+                gst: "09ALRPR8561K2Z0",
+                phone: "9211022131",
+                address: "Shop 6 Aar City Regence Park, UP 201309"
+            };
+
+            // Initialize
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 60000); // Update time every minute
+            loadOrders();
+            setupRealtimeSubscription(); // Set up subscription once
+
+            // Event Listeners
+            closeOrderDetailsBtn.addEventListener('click', () => orderDetailsModal.classList.add('hidden'));
+            statusFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const status = btn.dataset.status;
+                    setFilter(status);
+                });
+            });
+
+            // Date Filter Event Listeners
+            dateFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const range = btn.dataset.range;
+                    setDateRange(range);
+                });
+            });
+
+            applyCustomDateBtn.addEventListener('click', () => {
+                const fromDate = fromDateInput.value;
+                const toDate = toDateInput.value;
+                
+                if (!fromDate || !toDate) {
+                    alert('Please select both from and to dates');
+                    return;
+                }
+                
+                if (new Date(fromDate) > new Date(toDate)) {
+                    alert('From date cannot be after to date');
+                    return;
+                }
+                
+                setDateRange('custom');
+                loadOrders();
+            });
+
+            // Print Event Listeners
+            printReceiptOrderBtn.addEventListener('click', () => {
+                if (currentOrderDetails) {
+                    prepareReceipt(currentOrderDetails);
+                    const receiptArea = document.getElementById('receipt-print-area');
+                    receiptArea.classList.remove('hidden');
+                    window.print();
+                    receiptArea.classList.add('hidden');
+                }
+            });
+
+            printKotOrderBtn.addEventListener('click', () => {
+                if (currentOrderDetails) {
+                    prepareKOT(currentOrderDetails);
+                    const kotArea = document.getElementById('kot-print-area');
+                    kotArea.classList.remove('hidden');
+                    window.print();
+                    kotArea.classList.add('hidden');
+                }
+            });
+
+            printReceiptBtn.addEventListener('click', () => {
+                const receiptArea = document.getElementById('receipt-print-area');
+                receiptArea.classList.remove('hidden');
+                window.print();
+                receiptArea.classList.add('hidden');
+            });
+
+            printKotBtn.addEventListener('click', () => {
+                const kotArea = document.getElementById('kot-print-area');
+                kotArea.classList.remove('hidden');
+                window.print();
+                kotArea.classList.add('hidden');
+            });
+
+            closePrintModalBtn.addEventListener('click', () => {
+                printModal.classList.add('hidden');
+            });
+
+            // Edit Modal Listeners
+            orderDetailsModal.addEventListener('click', (e) => {
+                if (e.target.id === 'edit-order-btn') {
+                    if (currentOrderDetails) {
+                        openEditOrderModal(currentOrderDetails);
+                    }
+                }
+            });
+            closeEditOrderModalBtn.addEventListener('click', () => editOrderModal.classList.add('hidden'));
+            editMenuSearch.addEventListener('input', () => renderMenuForEdit(editMenuSearch.value));
+            saveOrderChangesBtn.addEventListener('click', saveOrderChanges);
+
+            enableSoundBtn.addEventListener('click', () => {
+                const playPromise = notificationSound.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // Play started successfully. Pause it immediately to "unlock" audio.
+                        notificationSound.pause();
+                        notificationSound.currentTime = 0;
+
+                        localStorage.setItem('soundEnabled', 'true');
+                        soundPermissionModal.classList.add('hidden');
+                        showNotification('Sound enabled successfully!', 'success');
+                        
+                        // Now that sound is enabled, check if we need to play it for existing pending orders
+                        updateNotificationSound();
+                    }).catch(error => {
+                        console.error('Could not enable sound:', error);
+                        showNotification('Could not enable sound. Please check browser settings and permissions.', 'error');
+                    });
+                }
+            });
+
+            // At the end of the Initialize section, check for sound permission
+            if (localStorage.getItem('soundEnabled') !== 'true') {
+                soundPermissionModal.classList.remove('hidden');
+            }
+
+            function updateNotificationSound() {
+                // Only attempt to play sound if permission has been granted
+                if (localStorage.getItem('soundEnabled') !== 'true') {
+                    return;
+                }
+
+                if (unacknowledgedOrders.size > 0) {
+                    const playPromise = notificationSound.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.error("Audio playback failed:", error);
+                            // If playback fails after permission was granted, the user might have revoked it.
+                            // Prompt them again.
+                            localStorage.removeItem('soundEnabled');
+                            soundPermissionModal.classList.remove('hidden');
+                            showNotification('Could not play sound. Please re-enable audio.', 'error');
+                        });
+                    }
+                } else {
+                    notificationSound.pause();
+                    notificationSound.currentTime = 0;
+                }
+                        item_name: name,
+                        variant: variant,
+                        price_per_unit: price,
+                        quantity: 1,
+                    });
+                }
+                renderEditOrderItems();
+            }
+
+            function updateEditItemQuantity(index, change) {
+                const item = orderBeingEdited.items[index];
+                if (item) {
+                    item.quantity += change;
+                    if (item.quantity <= 0) {
+                        orderBeingEdited.items.splice(index, 1);
+                    }
+                }
+                renderEditOrderItems();
+            }
+
+            function renderEditOrderItems() {
+                editOrderItemsContainer.innerHTML = '';
+                if (orderBeingEdited.items.length === 0) {
+                    editOrderItemsContainer.innerHTML = '<p class="text-center text-gray-500">No items in order.</p>';
+                } else {
+                    orderBeingEdited.items.forEach((item, index) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'flex items-center justify-between py-2 border-b';
+                        itemDiv.innerHTML = `
+                            <div>
+                                <p class="font-semibold">${item.item_name} (${item.variant})</p>
+                                <p class="text-sm text-gray-600">₹${parseFloat(item.price_per_unit).toFixed(2)}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="quantity-change bg-gray-200 rounded-full w-6 h-6 font-bold" data-index="${index}" data-change="-1">-</button>
+                                <span class="w-8 text-center font-semibold">${item.quantity}</span>
+                                <button class="quantity-change bg-gray-200 rounded-full w-6 h-6 font-bold" data-index="${index}" data-change="1">+</button>
+                            </div>
+                        `;
+                        editOrderItemsContainer.appendChild(itemDiv);
+                    });
+                }
+
+                document.querySelectorAll('#edit-order-items-container .quantity-change').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const index = parseInt(button.dataset.index);
+                        const change = parseInt(button.dataset.change);
+                        updateEditItemQuantity(index, change);
+                    });
+                });
+
+                calculateEditOrderTotal();
+            }
+
+            function calculateEditOrderTotal() {
+                const total = orderBeingEdited.items.reduce((sum, item) => {
+                    return sum + (item.price_per_unit * item.quantity);
+                }, 0);
+                orderBeingEdited.grand_total = total;
+                editGrandTotalEl.textContent = `₹${total.toFixed(2)}`;
+            }
+
+            async function openEditOrderModal(order) {
+                orderBeingEdited = JSON.parse(JSON.stringify(order));
+                
+                editOrderIdDisplay.textContent = `#${order.id}`;
+                
+                document.querySelector(`input[name="edit-order-type"][value="${order.order_type}"]`).checked = true;
+                document.querySelector(`input[name="edit-payment-mode"][value="${order.payment_mode}"]`).checked = true;
+
+                renderEditOrderItems();
+                
+                await fetchMenuForEdit();
+                renderMenuForEdit();
+                
+                editOrderModal.classList.remove('hidden');
+            }
+
+            async function saveOrderChanges() {
+                if (!orderBeingEdited) return;
+
+                saveOrderChangesBtn.disabled = true;
+                saveOrderChangesBtn.textContent = 'Saving...';
+
+                try {
+                    const orderId = orderBeingEdited.id;
+                    
+                    const newOrderType = document.querySelector('input[name="edit-order-type"]:checked').value;
+                    const newPaymentMode = document.querySelector('input[name="edit-payment-mode"]:checked').value;
+                    calculateEditOrderTotal();
+                    const newGrandTotal = orderBeingEdited.grand_total;
+
+                    const { error: deleteError } = await supabaseClient
+                        .from('order_items')
+                        .delete()
+                        .eq('order_id', orderId);
+                    
+                    if (deleteError) throw deleteError;
+
+                    const newOrderItems = orderBeingEdited.items.map(item => ({
+                        order_id: orderId,
+                        item_name: item.item_name,
+                        variant: item.variant,
+                        quantity: item.quantity,
+                        price_per_unit: item.price_per_unit
+                    }));
+
+                    if (newOrderItems.length > 0) {
+                        const { error: insertError } = await supabaseClient
+                            .from('order_items')
+                            .insert(newOrderItems);
+                        if (insertError) throw insertError;
+                    }
+
+                    const { error: updateError } = await supabaseClient
+                        .from('orders')
+                        .update({
+                            grand_total: newGrandTotal,
+                            payment_mode: newPaymentMode,
+                            order_type: newOrderType
+                        })
+                        .eq('id', orderId);
+
+                    if (updateError) throw updateError;
+
+                    showNotification('Order updated successfully!', 'success');
+                    editOrderModal.classList.add('hidden');
+                    orderDetailsModal.classList.add('hidden');
+                    
+                    loadOrders();
+
+                } catch (error) {
+                    console.error('Error saving order changes:', error);
+                    alert('Failed to save order changes: ' + error.message);
+                } finally {
+                    saveOrderChangesBtn.disabled = false;
+                    saveOrderChangesBtn.textContent = 'Save Changes';
+                }
+            }
+
+            // Functions
+            function updateCurrentTime() {
+                const now = new Date();
+                currentTimeEl.textContent = now.toLocaleString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function setDateRange(range) {
+                currentDateRange = range;
+                
+                // Update active button
+                dateFilterBtns.forEach(btn => {
+                    if (btn.dataset.range === range) {
+                        btn.classList.remove('bg-gray-100', 'text-gray-800');
+                        btn.classList.add('bg-blue-600', 'text-white');
+                    } else {
+                        btn.classList.remove('bg-blue-600', 'text-white');
+                        btn.classList.add('bg-gray-100', 'text-gray-800');
+                    }
+                });
+
+                // Show/hide custom date range
+                if (range === 'custom') {
+                    customDateRange.classList.remove('hidden');
+                } else {
+                    customDateRange.classList.add('hidden');
+                }
+
+                loadOrders();
+            }
+
+            function setFilter(status) {
+                currentFilter = status;
+                
+                // Update active button
+                statusFilterBtns.forEach(btn => {
+                    if (btn.dataset.status === status) {
+                        btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+                    } else {
+                        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+                    }
+                });
+
+                renderOrders();
+            }
+
+            function getDateRangeFilter() {
+                const now = new Date();
+                let startDate, endDate;
+
+                switch (currentDateRange) {
+                    case 'today':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                        break;
+                    case 'yesterday':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'this_week':
+                        const startOfWeek = new Date(now);
+                        startOfWeek.setDate(now.getDate() - now.getDay());
+                        startDate = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate());
+                        endDate = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 7);
+                        break;
+                    case 'last_week':
+                        const lastWeek = new Date(now);
+                        lastWeek.setDate(now.getDate() - 7 - now.getDay());
+                        startDate = new Date(lastWeek.getFullYear(), lastWeek.getMonth(), lastWeek.getDate());
+                        endDate = new Date(lastWeek.getFullYear(), lastWeek.getMonth(), lastWeek.getDate() + 7);
+                        break;
+                    case 'this_month':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                        break;
+                    case 'last_month':
+                        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                    case 'this_year':
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                        endDate = new Date(now.getFullYear() + 1, 0, 1);
+                        break;
+                    case 'custom':
+                        if (fromDateInput.value && toDateInput.value) {
+                            startDate = new Date(fromDateInput.value);
+                            endDate = new Date(toDateInput.value);
+                            endDate.setDate(endDate.getDate() + 1); // Include the entire end date
+                        } else {
+                            // If custom dates not set, default to today
+                            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                        }
+                        break;
+                    default:
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                }
+
+                return {
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString()
+                };
+            }
+
+            async function loadOrders() {
+                try {
+                    loadingState.classList.remove('hidden');
+                    
+                    const dateRange = getDateRangeFilter();
+                    console.log('Loading orders for date range:', dateRange);
+
+                    // Build query with date filter
+                    let query = supabaseClient
+                        .from('orders')
+                        .select('*, order_items(*)')
+                        .gte('created_at', dateRange.start)
+                        .lt('created_at', dateRange.end)
+                        .order('id', { ascending: false });
+
+                    const { data: orders, error } = await query;
+
+                    if (error) throw error;
+
+                    console.log('Fetched orders with items:', orders);
+
+                    if (!orders || orders.length === 0) {
+                        allOrders = [];
+                        renderOrders();
+                        return;
+                    }
+
+                    // Map the data to the structure expected by the rest of the code
+                    allOrders = orders.map(order => {
+                        return {
+                            ...order,
+                            items: order.order_items || [], // Use fetched items, default to empty array
+                            displayOrderNumber: order.id,
+                            status: order.status || 'Pending'
+                        };
+                    });
+
+                    console.log('Combined orders:', allOrders);
+
+                    unacknowledgedOrders.clear();
+                    allOrders.forEach(order => {
+                        if (order.status === 'Pending') {
+                            unacknowledgedOrders.add(order.id);
+                        }
+                    });
+                    
+                    renderOrders();
+                    updateNotificationSound();
+                    // Realtime subscription is now handled separately
+
+                } catch (error) {
+                    console.error('Error loading orders:', error);
+                    alert('Error loading orders: ' + error.message);
+                } finally {
+                    loadingState.classList.add('hidden');
+                }
+            }
+
+            function getDailyOrderNumber(orderId, orders) {
+                // Sort orders by creation time and assign daily numbers
+                const sortedOrders = [...orders].sort((a, b) => 
+                    new Date(a.created_at) - new Date(b.created_at)
+                );
+                
+                const orderIndex = sortedOrders.findIndex(order => order.id === orderId);
+                return orderIndex + 1; // Start from 1
+            }
+
+            function setupRealtimeSubscription() {
+                // Subscribe to orders table changes with specific event handling
+                supabaseClient
+                    .channel('orders-changes')
+                    .on('postgres_changes', 
+                        { event: 'INSERT', schema: 'public', table: 'orders' },
+                        async (payload) => {
+                            console.log('New order detected:', payload);
+                            await handleNewOrder(payload.new);
+                        }
+                    )
+                    .on('postgres_changes',
+                        { event: 'UPDATE', schema: 'public', table: 'orders' },
+                        async (payload) => {
+                            console.log('Order update detected:', payload);
+                            await handleOrderUpdate(payload.new);
+                        }
+                    )
+                    .on('postgres_changes',
+                        { event: 'DELETE', schema: 'public', table: 'orders' },
+                        async (payload) => {
+                            console.log('Order delete detected:', payload);
+                            await handleOrderDelete(payload.old.id);
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('Real-time subscription active');
+                        }
+                    });
+            }
+
+            async function handleNewOrder(newOrderData) {
+                try {
+                    // Check if the new order is within current date range
+                    const dateRange = getDateRangeFilter();
+                    const orderDate = new Date(newOrderData.created_at);
+                    const startDate = new Date(dateRange.start);
+                    const endDate = new Date(dateRange.end);
+
+                    if (orderDate >= startDate && orderDate < endDate) {
+                        // Fetch order items for the new order
+                        const { data: orderItems, error } = await supabaseClient
+                            .from('order_items')
+                            .select('*')
+                            .eq('order_id', newOrderData.id);
+
+                        if (error) throw error;
+
+                        // Format the new order
+                        const newOrder = {
+                            ...newOrderData,
+                            items: orderItems || [],
+                            displayOrderNumber: newOrderData.id,
+                            status: newOrderData.status || 'Pending'
+                        };
+
+                        // Add to the beginning of the array (most recent first)
+                        allOrders.unshift(newOrder);
+
+                        if (newOrder.status === 'Pending') {
+                            unacknowledgedOrders.add(newOrder.id);
+                            updateNotificationSound();
+                        }
+
+                        // Update total count
+                        totalOrdersCountEl.textContent = allOrders.length;
+
+                        // Update UI without full reload
+                        renderOrders();
+
+                        // Show notification for new order
+                        showNotification(`New order #${newOrderData.id} received!`, 'success');
+                    }
+                } catch (error) {
+                    console.error('Error handling new order:', error);
+                }
+            }
+
+            async function handleOrderUpdate(updatedOrderData) {
+                try {
+                    // Find the order in our local array
+                    const orderIndex = allOrders.findIndex(order => order.id === updatedOrderData.id);
+                    
+                    if (orderIndex !== -1) {
+                        const oldStatus = allOrders[orderIndex].status;
+                        const newStatus = updatedOrderData.status;
+
+                        // Update the order in our array
+                        allOrders[orderIndex] = {
+                            ...allOrders[orderIndex],
+                            ...updatedOrderData,
+                            status: newStatus || oldStatus
+                        };
+
+                        // Manage notification sound based on status change
+                        if (oldStatus === 'Pending' && (newStatus === 'Accepted' || newStatus === 'Declined')) {
+                            unacknowledgedOrders.delete(updatedOrderData.id);
+                            updateNotificationSound();
+                        } else if (newStatus === 'Pending' && oldStatus !== 'Pending') {
+                            unacknowledgedOrders.add(updatedOrderData.id);
+                            updateNotificationSound();
+                        }
+
+                        // Update UI without full reload
+                        renderOrders();
+
+                        // Show notification if status changed
+                        if (newStatus && newStatus !== oldStatus) {
+                            showNotification(`Order #${updatedOrderData.id} status updated to ${newStatus}`, 'success');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling order update:', error);
+                }
+            }
+
+            async function handleOrderDelete(deletedOrderId) {
+                try {
+                    if (unacknowledgedOrders.has(deletedOrderId)) {
+                        unacknowledgedOrders.delete(deletedOrderId);
+                        updateNotificationSound();
+                    }
+
+                    // Remove the order from our array
+                    allOrders = allOrders.filter(order => order.id !== deletedOrderId);
+
+                    // Update total count
+                    totalOrdersCountEl.textContent = allOrders.length;
+
+                    // Update UI without full reload
+                    renderOrders();
+
+                    // Show notification
+                    showNotification(`Order #${deletedOrderId} has been deleted`, 'info');
+                } catch (error) {
+                    console.error('Error handling order delete:', error);
+                }
+            }
+
+            function renderOrders() {
+                const filteredOrders = currentFilter === 'all' 
+                    ? allOrders 
+                    : allOrders.filter(order => order.status === currentFilter);
+
+                totalOrdersCountEl.textContent = allOrders.length;
+
+                if (filteredOrders.length === 0) {
+                    ordersContainer.classList.add('hidden');
+                    noOrdersMessage.classList.remove('hidden');
+                    return;
+                }
+
+                ordersContainer.classList.remove('hidden');
+                noOrdersMessage.classList.add('hidden');
+                ordersContainer.innerHTML = '';
+
+                filteredOrders.forEach(order => {
+                    const orderCard = createOrderCard(order);
+                    ordersContainer.appendChild(orderCard);
+                });
+            }
+
+            function createOrderCard(order) {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer';
+                card.addEventListener('click', () => showOrderDetails(order));
+
+                const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                const orderTime = new Date(order.created_at).toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                card.innerHTML = `
+                    <div class="p-4 border-b">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">Order #${order.displayOrderNumber}</h3>
+                                <p class="text-sm text-gray-500">${orderTime}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="status-badge px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}">
+                                    ${order.status.toUpperCase()}
+                                </span>
+                                <p class="text-sm font-semibold mt-1">${order.order_type || ''}</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600">${totalItems} item${totalItems !== 1 ? 's' : ''} • ₹${order.grand_total}</p>
+                        <p class="text-sm text-gray-500">Payment: ${order.payment_mode}</p>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-1 max-h-20 overflow-y-auto">
+                            ${order.items.slice(0, 3).map(item => `
+                                <div class="flex justify-between text-sm">
+                                    <span class="truncate">${item.quantity}x ${item.item_name}</span>
+                                    <span class="text-gray-500 ml-2">${item.variant}</span>
+                                </div>
+                            `).join('')}
+                            ${order.items.length > 3 ? `<div class="text-sm text-gray-500">+${order.items.length - 3} more items</div>` : ''}
+                        </div>
+                        ${order.note ? `<div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs"><span class="font-semibold">Note:</span> ${order.note}</div>` : ''}
+                    </div>
+                `;
+
+                return card;
+            }
+
+            function getStatusClass(status) {
+                switch (status) {
+                    case 'Pending': return 'status-pending';
+                    case 'Accepted': return 'status-accepted';
+                    case 'Ready': return 'status-ready';
+                    case 'Delivered': return 'status-delivered';
+                    case 'Declined': return 'status-declined';
+                    default: return 'status-pending';
+                }
+            }
+
+            function showOrderDetails(order) {
+                currentOrderDetails = order;
+                
+                // Update modal header
+                document.getElementById('order-details-header').innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-lg font-bold">Order #${order.displayOrderNumber}</p>
+                            <p class="text-sm text-gray-600">${new Date(order.created_at).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-blue-600">₹${order.grand_total}</p>
+                            <p class="text-sm text-gray-600">${order.payment_mode} / ${order.order_type || ''}</p>
+                        </div>
+                    </div>
+                `;
+
+                // Update order items
+                const itemsList = document.getElementById('order-items-list');
+                itemsList.innerHTML = order.items.map(item => `
+                    <div class="flex justify-between items-center py-2 border-b">
+                        <div class="flex-1">
+                            <p class="font-semibold">${item.item_name}</p>
+                            <p class="text-sm text-gray-500">${item.variant}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold">${item.quantity} x ₹${item.price_per_unit}</p>
+                            <p class="text-sm text-gray-600">₹${(item.quantity * item.price_per_unit).toFixed(2)}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update note display
+                const noteDisplay = document.getElementById('order-note-display');
+                const noteText = document.getElementById('order-note-text');
+                if (order.note) {
+                    noteText.textContent = order.note;
+                    noteDisplay.classList.remove('hidden');
+                } else {
+                    noteDisplay.classList.add('hidden');
+                }
+
+                // Update status badge
+                const statusBadge = document.getElementById('current-status-badge');
+                statusBadge.textContent = order.status.toUpperCase();
+                statusBadge.className = `text-lg font-semibold ${getStatusClass(order.status)} px-3 py-1 rounded-full`;
+
+                // Update status buttons
+                const statusButtons = document.getElementById('status-buttons');
+                statusButtons.innerHTML = getStatusButtons(order.status);
+
+                // Add event listeners to status buttons
+                document.querySelectorAll('.status-change-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const newStatus = btn.dataset.status;
+                        updateOrderStatus(order.id, newStatus);
+                    });
+                });
+
+                orderDetailsModal.classList.remove('hidden');
+            }
+
+            function getStatusButtons(currentStatus) {
+                const buttons = {
+                    Pending: [
+                        { status: 'Accepted', label: 'Accept', class: 'bg-blue-600 hover:bg-blue-700 text-white' },
+                        { status: 'Declined', label: 'Decline', class: 'bg-red-600 hover:bg-red-700 text-white' }
+                    ],
+                    Accepted: [
+                        { status: 'Ready', label: 'Mark Ready', class: 'bg-green-600 hover:bg-green-700 text-white' },
+                        { status: 'Pending', label: 'Back to Pending', class: 'bg-gray-600 hover:bg-gray-700 text-white' }
+                    ],
+                    Ready: [
+                        { status: 'Delivered', label: 'Mark Delivered', class: 'bg-green-600 hover:bg-green-700 text-white' },
+                        { status: 'Accepted', label: 'Back to Accepted', class: 'bg-blue-600 hover:bg-blue-700 text-white' }
+                    ],
+                    Delivered: [
+                        { status: 'Ready', label: 'Back to Ready', class: 'bg-green-600 hover:bg-green-700 text-white' }
+                    ],
+                    Declined: [
+                        { status: 'Pending', label: 'Re-open', class: 'bg-blue-600 hover:bg-blue-700 text-white' }
+                    ]
+                };
+
+                const currentButtons = buttons[currentStatus] || [];
+                return currentButtons.map(btn => `
+                    <button class="status-change-btn px-4 py-2 rounded-lg font-semibold transition-colors ${btn.class}" data-status="${btn.status}">
+                        ${btn.label}
+                    </button>
+                `).join('');
+            }
+
+            async function updateOrderStatus(orderId, newStatus) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('orders')
+                        .update({ status: newStatus })
+                        .eq('id', orderId);
+
+                    if (error) throw error;
+
+                    // Update local state
+                    const orderIndex = allOrders.findIndex(order => order.id === orderId);
+                    if (orderIndex !== -1) {
+                        allOrders[orderIndex].status = newStatus;
+                    }
+
+                    // Update UI
+                    renderOrders();
+                    orderDetailsModal.classList.add('hidden');
+                    
+                    // Show success message
+                    showNotification(`Order status updated to ${newStatus}`, 'success');
+
+                } catch (error) {
+                    console.error('Error updating order status:', error);
+                    showNotification('Error updating order status', 'error');
+                }
+            }
+
+            function showNotification(message, type) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white font-semibold z-50 ${
+                    type === 'success' ? 'bg-green-600' : 'bg-red-600'
+                }`;
+                notification.textContent = message;
+
+                document.body.appendChild(notification);
+
+                // Remove notification after 3 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            // Print Functions for Existing Orders
+            function formatDateTime() {
+                const now = new Date();
+                const date = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
+                const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                return { date, time };
+            }
+
+            function generatePrintHeader(orderNumber, paymentMode, orderType) {
+                const { date, time } = formatDateTime();
+                return `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3 style="font-size: 24px; font-weight: bold; margin: 0;">${KIOSK_INFO.name}</h3>
+                        <p style="margin: 2px 0;">${KIOSK_INFO.address}</p>
+                        <p style="margin: 2px 0;">Phone: ${KIOSK_INFO.phone}</p>
+                        <p style="margin: 2px 0;">GSTIN: ${KIOSK_INFO.gst}</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Date: ${date}</span>
+                        <span>Time: ${time}</span>
+                    </div>
+                     <p style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 16px;">Payment Mode: ${paymentMode.toUpperCase()}</p>
+                    <h1 style="text-align: center; font-size: 48px; font-weight: bold; margin: 10px 0; border: 2px solid #000; padding: 5px;">
+                        ORDER #${orderNumber}
+                    </h1>
+                    <h2 style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 24px;">${(orderType || '').toUpperCase()}</h2>
+                `;
+            }
+
+            function prepareReceipt(order) {
+                const grandTotal = order.grand_total;
+                const gstAmount = grandTotal - (grandTotal / 1.05);
+                const taxableValue = grandTotal / 1.05;
+                
+                // Update print modal with order number
+                printOrderNumberEl.textContent = `Order #${order.id}`;
+
+                let itemsHtml = `<table style="width: 100%; border-collapse: collapse;"><thead><tr><th style="text-align: left; border-bottom: 1px solid #000; padding-bottom: 5px;">Item</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Qty</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Price</th><th style="text-align: right; border-bottom: 1px solid #000; padding-bottom: 5px;">Amount</th></tr></thead><tbody>`;
+                order.items.forEach(item => {
+                    itemsHtml += `<tr><td>${item.item_name} (${item.variant})</td><td style="text-align: right;">${item.quantity}</td><td style="text-align: right;">${item.price_per_unit.toFixed(2)}</td><td style="text-align: right;">${(item.quantity * item.price_per_unit).toFixed(2)}</td></tr>`;
+                });
+                itemsHtml += '</tbody></table>';
+
+                const receiptHtml = `<div style="width: 300px; margin: 0 auto; padding: 20px;">${generatePrintHeader(order.id, order.payment_mode, order.order_type)}<h4 style="text-align:center; margin-bottom: 10px; font-size: 18px; border-bottom: 1px dashed #000; padding-bottom: 5px;">Customer Receipt</h4>${itemsHtml}<hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;"><div style="margin-top: 20px;"><p style="display: flex; justify-content: space-between;"><span>Taxable Value:</span> <span>₹${taxableValue.toFixed(2)}</span></p><p style="display: flex; justify-content: space-between;"><span>CGST @ 2.5%:</span> <span>₹${(gstAmount / 2).toFixed(2)}</span></p><p style="display: flex; justify-content: space-between;"><span>SGST @ 2.5%:</span> <span>₹${(gstAmount / 2).toFixed(2)}</span></p><hr style="border: none; border-top: 1px solid #000; margin: 10px 0;"><p style="display: flex; justify-content: space-between; font-weight: bold; font-size: 22px;"><span>GRAND TOTAL:</span> <span>₹${grandTotal.toFixed(2)}</span></p></div><p style="text-align: center; margin-top: 20px;">Thank you for your visit!</p></div>`;
+                document.getElementById('receipt-print-area').innerHTML = receiptHtml;
+            }
+
+            function prepareKOT(order) {
+                // Update print modal with order number
+                printOrderNumberEl.textContent = `Order #${order.id}`;
+
+                let itemsHtml = '<div style="margin-top: 20px; font-size: 20px;">';
+                order.items.forEach(item => {
+                    itemsHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #000;"><span style="font-weight: bold; font-size: 24px;">${item.quantity} x</span><span style="flex-grow: 1; margin-left: 15px;">${item.item_name} (${item.variant})</span></div>`;
+                });
+                itemsHtml += '</div>';
+
+                const noteHtml = order.note ? `<div style="margin-top: 20px; border: 2px solid #000; padding: 10px; font-weight: bold; font-size: 18px;">NOTE: ${order.note}</div>` : '';
+                const kotHtml = `<div style="width: 300px; margin: 0 auto; padding: 20px;">${generatePrintHeader(order.id, order.payment_mode, order.order_type)}<h4 style="text-align:center; font-size: 22px; margin-bottom: 15px;">Kitchen Order Ticket (KOT)</h4>${itemsHtml}${noteHtml}</div>`;
+                document.getElementById('kot-print-area').innerHTML = kotHtml;
+            }
+        });
+    </script>
+</body>
+</html>

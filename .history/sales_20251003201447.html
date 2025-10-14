@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report - Delhi Chicken Brothers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Sales Report</h1>
+                    <p class="text-gray-600">Delhi Chicken Brothers - Comprehensive Sales Analytics</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='pos.html'" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Back to POS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Date Range Filters -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <div class="flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                    <select id="date-range" class="w-48 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="quarter">This Quarter</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                
+                <div id="custom-date-range" class="hidden">
+                    <div class="flex gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                            <input type="date" id="start-date" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                            <input type="date" id="end-date" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="apply-filter" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Apply Filter
+                </button>
+                
+                <button id="export-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    Export Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-blue-600 text-xl font-bold">₹</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Sales</p>
+                        <p id="total-sales" class="text-2xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="text-green-600 text-xl font-bold">📦</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Orders</p>
+                        <p id="total-orders" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-purple-600 text-xl font-bold">💰</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Average Order Value</p>
+                        <p id="avg-order-value" class="text-2xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-orange-600 text-xl font-bold">📊</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Items Sold</p>
+                        <p id="total-items" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Method Breakdown</h3>
+                <div id="payment-chart-container" class="h-64">
+                    <canvas id="payment-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Daily Sales Trend</h3>
+                <div id="sales-chart-container" class="h-64">
+                    <canvas id="sales-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Performance -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performing Products</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Sold</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Revenue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Product data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Orders Table -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Detailed Orders</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Order data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl">
+            <div class="flex items-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                <span class="text-gray-700">Loading sales data...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let ordersData = [];
+        let orderItemsData = [];
+        let filteredOrders = [];
+        let filteredOrderItems = [];
+        
+        // Chart instances
+        let paymentChart = null;
+        let salesChart = null;
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const dateRangeSelect = document.getElementById('date-range');
+        const customDateRange = document.getElementById('custom-date-range');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const applyFilterBtn = document.getElementById('apply-filter');
+        const exportBtn = document.getElementById('export-btn');
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateInputs();
+            loadCSVData();
+            setupEventListeners();
+        });
+
+        function initializeDateInputs() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            startDateInput.value = today.toISOString().split('T')[0];
+            endDateInput.value = today.toISOString().split('T')[0];
+        }
+
+        function setupEventListeners() {
+            dateRangeSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customDateRange.classList.remove('hidden');
+                } else {
+                    customDateRange.classList.add('hidden');
+                }
+            });
+
+            applyFilterBtn.addEventListener('click', applyFilters);
+            exportBtn.addEventListener('click', exportReport);
+        }
+
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+            document.body.classList.add('loading');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+            document.body.classList.remove('loading');
+        }
+
+        function loadCSVData() {
+            showLoading();
+            
+            // Since we can't directly read local CSV files from browser due to CORS,
+            // we'll use the provided CSV data as strings and parse them
+            // In a real implementation, you would fetch these from Supabase API
+            
+            setTimeout(() => {
+                try {
+                    // Parse the provided CSV data
+                    parseCSVData();
+                    applyFilters(); // Apply default filter (today)
+                } catch (error) {
+                    console.error('Error loading CSV data:', error);
+                    alert('Error loading sales data. Please check the console for details.');
+                } finally {
+                    hideLoading();
+                }
+            }, 1000);
+        }
+
+        function parseCSVData() {
+            // Parse orders CSV
+            const ordersCSV = `id,grand_total,payment_mode,note,created_at
+1,12,Cash,,2025-09-22 17:47:58.533596+00
+2,12,Cash,,2025-09-22 17:48:40.02867+00
+3,151,UPI,,2025-09-22 17:49:01.417487+00
+4,199,Cash,,2025-09-22 17:56:41.360328+00
+5,119,Cash,,2025-09-22 18:04:22.665714+00
+6,119,Cash,,2025-09-22 18:24:07.780886+00
+7,139,Cash,,2025-09-22 18:24:13.111434+00
+8,199,Cash,,2025-09-22 18:32:18.525015+00
+9,330,Cash,,2025-09-22 18:32:45.420983+00
+10,337,UPI,,2025-09-22 18:33:47.429403+00
+11,536,UPI,,2025-09-22 18:36:35.612925+00
+12,119,Cash,,2025-09-22 19:03:12.599628+00
+13,368,Cash,,2025-09-22 19:24:46.087099+00
+14,119,Cash,,2025-09-22 19:39:40.538275+00
+15,198,Cash,,2025-09-22 19:49:02.817091+00
+16,362,UPI,I want more spicy,2025-09-22 19:53:02.045959+00
+17,211,UPI,Need more onions,2025-09-22 19:57:54.355091+00
+18,258,UPI,Less Spicy,2025-09-22 20:11:07.874422+00
+19,12,Cash,,2025-09-22 20:20:41.924287+00
+20,342,UPI,,2025-09-23 04:04:28.117423+00
+21,119,Cash,,2025-09-23 09:38:07.575285+00
+22,198,UPI,Less Spicy,2025-09-23 11:07:40.701179+00
+23,342,Cash,Spicy,2025-09-23 11:50:18.562839+00
+24,210,UPI,,2025-09-24 04:20:55.016597+00
+25,638,UPI,,2025-09-25 03:37:12.743212+00
+26,139,Cash,,2025-09-27 13:00:38.116602+00
+27,728,Cash,,2025-09-27 14:55:38.635166+00
+28,299,Cash,,2025-09-27 14:56:33.351836+00
+29,249,Cash,,2025-09-27 15:01:22.057512+00
+30,150,UPI,,2025-09-27 15:02:11.465211+00
+31,249,UPI,,2025-09-27 15:04:16.152382+00
+32,299,Cash,,2025-09-27 15:05:36.096691+00
+33,299,UPI,,2025-09-27 15:07:31.597273+00
+34,419,UPI,,2025-09-27 15:08:48.532758+00
+35,260,UPI,,2025-09-27 15:11:43.318098+00
+36,389,UPI,,2025-09-27 15:12:29.196273+00
+37,249,UPI,,2025-09-27 15:14:01.378315+00
+38,638,UPI,,2025-09-27 15:16:22.323668+00
+39,299,UPI,Bade Piece,2025-09-27 15:17:11.584642+00
+40,130,Cash,,2025-09-27 15:19:14.792714+00
+41,508,UPI,,2025-09-27 15:22:54.167139+00
+42,150,Cash,,2025-09-27 15:24:39.700275+00
+43,789,UPI,,2025-09-27 15:27:53.466159+00
+44,789,UPI,Packing,2025-09-27 15:28:39.934031+00
+45,259,UPI,,2025-09-27 15:29:44.593806+00
+46,539,Cash,,2025-09-27 15:33:10.798609+00
+47,219,UPI,,2025-09-27 15:39:17.827984+00
+48,369,UPI,,2025-09-27 15:40:16.831928+00
+49,150,UPI,,2025-09-27 15:43:08.896867+00
+50,259,UPI,,2025-09-27 15:44:02.262998+00
+51,259,UPI,,2025-09-27 15:45:15.114032+00
+52,259,UPI,,2025-09-27 15:46:38.364748+00
+53,219,UPI,,2025-09-27 15:47:29.644699+00
+54,389,UPI,,2025-09-27 15:48:53.953342+00
+55,249,UPI,,2025-09-27 15:49:23.908475+00
+56,419,UPI,,2025-09-27 15:49:44.68062+00
+57,130,UPI,,2025-09-27 15:50:51.528197+00
+58,518,Cash,,2025-09-27 15:52:15.236193+00
+59,259,UPI,Packing,2025-09-27 15:53:20.316566+00
+60,339,UPI,,2025-09-27 15:53:55.302581+00
+61,100,UPI,,2025-09-27 15:54:45.363217+00
+62,100,UPI,,2025-09-27 15:55:02.823712+00
+63,1137,UPI,,2025-09-27 15:55:59.473737+00
+64,259,UPI,,2025-09-27 15:57:24.086454+00
+65,259,UPI,,2025-09-27 15:59:47.189471+00
+66,369,UPI,Packing,2025-09-27 16:00:45.350912+00
+67,199,UPI,,2025-09-27 16:03:15.121196+00
+68,150,UPI,,2025-09-27 16:07:34.809612+00
+69,299,UPI,,2025-09-27 16:09:52.747518+00
+70,319,UPI,,2025-09-27 16:10:38.01771+00
+71,319,Cash,,2025-09-27 16:11:07.944172+00
+72,150,Cash,,2025-09-27 16:12:06.321758+00
+73,130,UPI,,2025-09-27 16:12:52.926177+00
+74,150,UPI,,2025-09-27 16:13:21.256507+00
+75,150,UPI,,2025-09-27 16:14:00.337967+00
+76,150,UPI,,2025-09-27 16:17:29.202551+00
+77,219,Cash,,2025-09-27 16:20:09.002718+00
+78,259,UPI,,2025-09-27 16:20:52.304244+00
+79,159,Cash,,2025-09-27 16:23:36.72503+00
+80,130,Cash,,2025-09-27 16:24:13.214331+00
+81,150,Cash,,2025-09-27 16:25:01.89639+00
+82,159,UPI,,2025-09-27 16:26:32.940894+00
+83,259,UPI,,2025-09-27 16:30:10.914152+00
+84,300,UPI,,2025-09-27 16:31:11.613612+00
+85,419,Cash,,2025-09-27 16:32:48.772808+00
+86,249,UPI,,2025-09-27 16:33:46.847319+00
+87,249,UPI,Packing,2025-09-27 16:33:55.701028+00
+88,509,UPI,Packing,2025-09-27 16:35:15.923001+00
+89,150,UPI,,2025-09-27 16:35:37.868301+00
+90,638,Cash,,2025-09-27 16:36:30.609923+00
+91,928,UPI,Packing,2025-09-27 16:37:40.18663+00
+92,708,UPI,,2025-09-27 16:39:21.464191+00
+93,468,UPI,,2025-09-27 16:41:49.636351+00
+94,419,UPI,,2025-09-27 16:42:43.163996+00
+95,219,UPI,,2025-09-27 16:46:06.06891+00
+96,299,UPI,Packing,2025-09-27 16:47:55.655994+00
+97,219,UPI,,2025-09-27 16:48:46.61029+00
+98,150,Cash,,2025-09-27 16:50:18.306922+00
+99,300,Cash,,2025-09-27 16:50:51.206888+00
+100,468,Cash,,2025-09-27 16:52:34.610573+00
+101,569,Cash,,2025-09-27 16:53:23.775399+00
+102,419,UPI,,2025-09-27 17:01:21.800384+00
+103,130,UPI,,2025-09-27 17:02:05.531076+00
+104,150,UPI,,2025-09-27 17:02:51.225869+00
+105,509,UPI,,2025-09-27 17:10:56.278803+00
+106,299,UPI,,2025-09-27 17:21:49.540895+00
+107,828,Cash,,2025-09-27 17:33:55.130501+00
+108,150,UPI,,2025-09-27 17:34:31.390082+00
+109,299,UPI,,2025-09-27 17:40:22.084587+00
+110,299,UPI,Packing,2025-09-27 17:40:43.954972+00
+111,599,UPI,,2025-09-27 17:43:21.23362+00
+112,419,UPI,,2025-09-27 17:56:24.81088+00
+113,639,UPI,,2025-09-27 17:58:09.783195+00
+114,219,Cash,,2025-09-27 18:06:46.183065+00
+115,300,Cash,,2025-09-27 18:13:36.276616+00
+116,1347,UPI,,2025-09-27 18:17:57.429562+00
+117,130,UPI,,2025-09-27 18:18:30.694984+00
+118,249,UPI,,2025-09-27 18:20:52.3587+00
+119,199,UPI,,2025-09-28 13:13:18.303522+00
+120,757,Cash,,2025-09-28 13:48:08.694342+00
+121,229,UPI,,2025-09-28 13:53:36.246695+00
+122,129,UPI,,2025-09-28 13:57:21.524211+00
+123,268,UPI,,2025-09-28 13:58:20.264844+00
+124,249,UPI,Packing,2025-09-28 13:58:59.791184+00
+125,159,Cash,,2025-09-28 14:00:41.630789+00
+126,139,Cash,,2025-09-28 14:02:33.210264+00
+127,129,Cash,,2025-09-28 14:03:07.458438+00
+128,139,UPI,Packing,2025-09-28 14:04:36.104174+00
+129,159,UPI,,2025-09-28 14:06:54.950778+00
+130,259,UPI,,2025-09-28 14:08:46.561472+00
+131,368,UPI,,2025-09-28 14:11:38.511987+00
+132,130,UPI,,2025-09-28 14:12:11.20907+00
+133,259,UPI,,2025-09-28 14:12:55.81749+00
+134,130,UPI,,2025-09-28 14:13:56.694289+00
+135,130,UPI,,2025-09-28 14:14:21.032696+00
+136,259,UPI,,2025-09-28 14:17:28.050374+00
+137,129,UPI,,2025-09-28 14:19:50.049724+00
+138,159,UPI,,2025-09-28 14:22:36.349433+00
+139,249,UPI,,2025-09-28 14:26:50.650639+00
+140,109,UPI,,2025-09-28 14:30:49.42761+00
+141,139,UPI,,2025-09-28 14:33:39.904793+00
+142,259,UPI,,2025-09-28 14:35:19.456857+00
+143,259,UPI,,2025-09-28 14:35:44.94361+00
+144,139,UPI,,2025-09-28 14:36:25.699818+00
+145,368,UPI,,2025-09-28 14:38:52.789966+00
+146,159,UPI,,2025-09-28 14:40:37.198464+00
+147,259,UPI,Packing,2025-09-28 14:42:07.864378+00
+148,139,UPI,,2025-09-28 14:43:03.164651+00
+149,358,UPI,,2025-09-28 14:45:53.320032+00
+150,248,UPI,Packing,2025-09-28 14:46:35.717932+00
+151,249,UPI,Packing,2025-09-28 14:47:59.30222+00
+152,159,UPI,,2025-09-28 14:51:05.749514+00
+153,398,UPI,,2025-09-28 14:56:18.711183+00
+154,259,UPI,,2025-09-28 14:59:34.466907+00
+155,129,UPI,,2025-09-28 15:01:15.473682+00
+156,259,Cash,"Packing, Less Spicy for Children",2025-09-28 15:04:11.011622+00
+157,249,UPI,More Spicy + Packing,2025-09-28 15:16:38.525284+00
+158,159,UPI,,2025-09-28 15:17:40.602188+00
+159,259,UPI,Less Gravy + Packing,2025-09-28 15:19:35.28954+00
+160,259,UPI,Less Spicy + Packing,2025-09-28 15:20:36.552257+00
+161,229,Cash,Packing,2025-09-28 15:25:13.584611+00
+162,249,Cash,,2025-09-28 15:29:16.658127+00
+163,259,UPI,,2025-09-28 15:31:45.05194+00
+164,199,UPI,,2025-09-28 15:34:22.011011+00
+165,259,UPI,Packing + Less Spicy,2025-09-28 15:35:10.843232+00
+166,249,UPI,,2025-09-28 15:39:36.102449+00
+167,130,UPI,with Green Chutney,2025-09-28 15:40:34.287638+00
+168,159,UPI,,2025-09-28 15:41:14.436761+00
+169,199,UPI,Packing,2025-09-28 15:47:36.302011+00
+170,259,UPI,with Green Chutney,2025-09-28 15:49:18.445687+00
+171,349,UPI,Packing,2025-09-28 15:50:59.079467+00
+172,399,UPI,,2025-09-28 15:52:14.365836+00
+173,199,UPI,,2025-09-28 15:52:48.191491+00
+174,259,UPI,,2025-09-28 15:55:25.392881+00
+175,239,UPI,Packing,2025-09-28 15:57:51.438847+00
+176,279,UPI,Packing,2025-09-28 15:59:02.297482+00
+177,299,UPI,,2025-09-28 16:00:18.043958+00
+178,598,UPI,,2025-09-28 16:00:44.172674+00
+179,199,UPI,Packing,2025-09-28 16:01:31.721181+00
+180,179,UPI,,2025-09-28 16:04:04.596893+00
+181,359,UPI,With More Gravy,2025-09-28 16:05:27.470781+00
+182,259,UPI,with extra gravy,2025-09-28 16:06:14.639821+00
+183,328,UPI,,2025-09-28 16:09:21.454936+00
+184,139,UPI,,2025-09-28 16:11:08.251092+00
+185,518,UPI,,2025-09-28 16:13:09.229016+00
+186,130,UPI,,2025-09-28 16:14:58.968245+00
+187,259,UPI,Packing,2025-09-28 16:18:27.774224+00
+188,130,UPI,,2025-09-28 16:19:33.7464+00
+189,109,UPI,,2025-09-28 16:21:52.3266+00
+190,429,UPI,,2025-09-28 16:24:49.851748+00
+191,159,UPI,,2025-09-28 16:34:16.549303+00
+192,159,UPI,,2025-09-28 16:41:02.033264+00
+193,319,UPI,Packing,2025-09-28 16:43:19.635744+00
+194,259,UPI,,2025-09-28 16:45:00.553821+00
+195,249,UPI,,2025-09-28 16:45:58.565961+00
+196,249,UPI,,2025-09-28 16:46:53.549858+00
+197,378,UPI,,2025-09-28 16:47:42.865571+00
+198,199,UPI,,2025-09-28 16:48:20.902758+00
+199,199,UPI,Packing,2025-09-28 16:48:42.78017+00
+200,249,UPI,,2025-09-28 16:50:41.451405+00
+201,259,UPI,,2025-09-28 16:53:36.255133+00
+202,199,UPI,,2025-09-28 16:55:11.847255+00
+203,259,UPI,,2025-09-28 16:55:43.585648+00
+204,328,Cash,,2025-09-28 16:59:23.66875+00
+205,279,Cash,,2025-09-28 17:03:54.004498+00
+206,299,UPI,,2025-09-28 17:04:30.132477+00
+207,259,UPI,,2025-09-28 17:06:59.112678+00
+208,249,UPI,,2025-09-28 17:07:33.368395+00
+209,199,UPI,,2025-09-28 17:15:00.635016+00
+210,259,UPI,,2025-09-28 17:18:24.751403+00
+211,109,UPI,,2025-09-28 17:21:52.395981+00
+212,150,UPI,,2025-09-28 17:28:47.547243+00
+213,130,UPI,,2025-09-28 17:28:55.376127+00
+214,259,UPI,,2025-09-28 17:29:21.081413+00
+215,259,UPI,,2025-09-28 17:38:03.362578+00
+216,359,UPI,,2025-09-28 17:42:41.419415+00
+217,279,UPI,,2025-09-28 17:55:21.438321+00
+218,498,UPI,,2025-09-28 17:56:11.390065+00
+219,339,UPI,,2025-09-28 18:00:28.727558+00
+220,300,UPI,,2025-09-29 13:35:21.288901+00
+221,149,UPI,,2025-09-29 13:39:35.226257+00
+222,169,Cash,,2025-09-29 14:15:42.028081+00
+223,229,UPI,,2025-09-29 14:17:06.258171+00
+224,229,UPI,Packing,2025-09-29 14:17:21.0423+00
+225,269,UPI,,2025-09-29 14:19:42.699975+00
+226,319,UPI,,2025-09-29 14:23:46.756847+00
+227,289,Cash,,2025-09-29 14:30:06.670194+00
+228,279,UPI,,2025-09-29 14:30:44.409881+00
+229,150,UPI,,2025-09-29 14:31:19.564267+00
+230,229,UPI,,2025-09-29 14:31:59.791324+00
+231,20,UPI,,2025-09-29 14:34:33.702981+00
+232,150,UPI,,2025-09-29 14:35:41.455691+00
+233,358,UPI,,2025-09-29 14:39:17.062083+00
+234,358,UPI,Two Half Plate,2025-09-29 14:40:55.736316+00
+235,309,UPI,Increase Gravy,2025-09-29 14:42:14.186579+00
+236,150,UPI,,2025-09-29 14:42:53.620501+00
+237,229,Cash,,2025-09-29 14:44:18.172303+00
+238,269,Cash,Pack,2025-09-29 14:48:15.876269+00
+239,269,Cash,,2025-09-29 14:49:38.877029+00
+240,269,Cash,Packing,2025-09-29 14:50:04.673712+00
+241,150,Cash,,2025-09-29 14:50:35.218779+00
+242,450,UPI,,2025-09-29 14:51:34.617269+00
+243,269,Cash,,2025-09-29 14:52:52.849433+00
+244,239,UPI,,2025-09-29 14:53:25.523503+00
+245,279,UPI,Packing,2025-09-29 14:55:51.925306+00
+246,179,UPI,Packing,2025-09-29 14:56:09.865076+00
+247,449,UPI,,2025-09-29 15:01:03.700405+00
+248,449,UPI,Packing,2025-09-29 15:01:22.70129+00
+249,159,UPI,,2025-09-29 15:06:08.978868+00
+250,150,UPI,Packing,2025-09-29 15:06:53.263863+00
+251,410,UPI,,2025-09-29 15:13:14.685964+00
+252,239,UPI,,2025-09-29 15:16:39.577403+00
+253,299,UPI,Packing,2025-09-29 15:18:30.99458+00
+254,300,UPI,,2025-09-29 15:19:07.134975+00
+255,159,UPI,,2025-09-29 15:20:24.954555+00
+256,399,UPI,,2025-09-29 15:21:20.486536+00
+257,150,UPI,,2025-09-29 15:24:24.209381+00
+258,279,UPI,,2025-09-29 15:25:34.795018+00
+259,300,UPI,,2025-09-29 15:26:07.964583+00
+260,508,UPI,,2025-09-29 15:29:46.935421+00
+261,319,UPI,,2025-09-29 15:30:49.790087+00
+262,150,UPI,,2025-09-29 15:31:35.011073+00
+263,338,UPI,,2025-09-29 15:32:15.505375+00
+264,279,UPI,,2025-09-29 15:34:00.308356+00
+265,229,UPI,,2025-09-29 15:34:44.615811+00
+266,179,UPI,,2025-09-29 15:35:17.106678+00
+267,279,UPI,,2025-09-29 15:37:14.607232+00
+268,279,UPI,,2025-09-29 15:38:22.913484+00
+269,150,UPI,,2025-09-29 15:39:10.936213+00
+270,439,UPI,,2025-09-29 15:41:03.301058+00
+271,279,UPI,,2025-09-29 15:44:01.286978+00
+272,558,UPI,One Packing + One Dining,2025-09-29 15:44:35.115209+00
+273,80,UPI,,2025-09-29 15:45:02.468706+00
+274,409,UPI,,2025-09-29 15:45:39.45852+00
+275,300,UPI,,2025-09-29 15:46:05.95541+00
+276,279,UPI,,2025-09-29 15:46:46.451905+00
+277,429,UPI,Packing,2025-09-29 15:47:27.083452+00
+278,279,UPI,,2025-09-29 15:47:56.564773+00
+279,150,UPI,,2025-09-29 15:48:27.729551+00
+280,60,UPI,,2025-09-29 15:49:01.074138+00
+281,279,UPI,,2025-09-29 15:49:19.114926+00
+282,348,UPI,Packing,2025-09-29 15:56:57.888216+00
+283,647,UPI,,2025-09-29 15:57:46.390534+00
+284,508,UPI,,2025-09-29 15:58:27.363898+00
+285,379,UPI,,2025-09-29 15:59:44.81759+00
+286,309,UPI,,2025-09-29 16:00:29.428799+00
+287,319,UPI,,2025-09-29 16:00:57.041833+00
+288,449,UPI,,2025-09-29 16:01:41.166534+00
+289,418,UPI,,2025-09-29 16:02:34.787976+00
+290,319,UPI,,2025-09-29 16:05:21.222578+00
+291,190,UPI,,2025-09-29 16:05:59.520956+00
+292,299,UPI,,2025-09-29 16:06:28.824831+00
+293,279,UPI,,2025-09-29 16:07:00.244916+00
+294,668,UPI,,2025-09-29 16:08:03.42074+00
+295,150,UPI,,2025-09-29 16:09:13.27472+00
+296,708,UPI,,2025-09-29 16:09:50.070992+00
+297,429,UPI,,2025-09-29 16:10:52.725401+00
+298,379,UPI,,2025-09-29 16:14:54.158122+00
+299,458,UPI,,2025-09-29 16:16:55.143025+00
+300,299,UPI,Packing,2025-09-29 16:17:38.825077+00
+301,478,UPI,,2025-09-29 16:22:59.628979+00
+302,528,UPI,,2025-09-29 16:24:02.512394+00
+303,229,UPI,,2025-09-29 16:25:21.053198+00
+304,239,UPI,Packing,2025-09-29 16:25:52.91795+00
+305,179,UPI,,2025-09-29 16:26:37.594815+00
+306,170,UPI,,2025-09-29 16:27:20.564541+00
+307,150,UPI,,2025-09-29 16:28:13.238141+00
+308,159,UPI,,2025-09-29 16:29:27.92976+00
+309,279,Cash,,2025-09-29 16:30:10.103077+00
+310,150,UPI,,2025-09-29 16:30:36.657391+00
+311,309,Cash,,2025-09-29 16:31:29.980797+00
+312,518,UPI,,2025-09-29 16:32:12.765073+00
+313,329,UPI,,2025-09-29 16:34:55.923818+00
+314,498,UPI,,2025-09-29 16:35:42.191987+00
+315,728,UPI,,2025-09-29 16:36:39.170301+00
+316,229,UPI,,2025-09-29 16:37:38.323495+00
+317,229,UPI,,2025-09-29 16:38:06.171413+00
+318,229,UPI,,2025-09-29 16:38:34.644883+00
+319,299,UPI,Packing,2025-09-29 16:41:00.543188+00
+320,518,UPI,,2025-09-29 16:41:43.291383+00
+321,169,UPI,,2025-09-29 16:46:41.435237+00
+322,450,UPI,,2025-09-29 16:47:30.1031+00
+323,259,UPI,,2025-09-29 16:48:46.586431+00
+324,358,UPI,,2025-09-29 16:49:22.836824+00
+325,179,UPI,Packing,2025-09-29 16:52:20.289591+00
+326,429,UPI,,2025-09-29 16:54:38.141275+00
+327,299,UPI,,2025-09-29 16:56:52.101005+00
+328,299,UPI,Packing,2025-09-29 16:57:59.930625+00
+329,309,UPI,,2025-09-29 16:59:45.541027+00
+330,279,UPI,,2025-09-29 17:01:17.507756+00
+331,299,UPI,,2025-09-29 17:01:48.124553+00
+332,299,UPI,,2025-09-29 17:02:45.571148+00
+333,229,UPI,,2025-09-29 17:05:50.273951+00
+334,458,UPI,Packing,2025-09-29 17:06:18.477779+00
+335,319,UPI,Packing,2025-09-29 17:09:02.21509+00
+336,60,UPI,Packing,2025-09-29 17:09:39.061872+00
+337,279,UPI,,2025-09-29 17:10:09.746696+00
+338,837,UPI,"One Plate Packing, two Dining",2025-09-29 17:12:49.501406+00
+339,458,Cash,,2025-09-29 17:14:19.308641+00
+340,488,UPI,,2025-09-29 17:16:42.388417+00
+341,638,UPI,,2025-09-29 17:18:39.432207+00
+342,319,UPI,Creamy,2025-09-29 17:19:35.867382+00
+343,398,UPI,Packing,2025-09-29 17:25:24.161187+00
+344,269,UPI,,2025-09-29 17:27:31.653023+00
+345,279,UPI,Packing + Gravy,2025-09-29 17:28:13.043186+00
+346,150,UPI,,2025-09-29 17:28:43.508573+00
+347,658,UPI,Packing,2025-09-29 17:30:00.542927+00
+348,179,UPI,,2025-09-29 17:31:11.520686+00
+349,259,UPI,,2025-09-29 17:32:34.659607+00
+350,279,UPI,,2025-09-29 17:32:59.530606+00
+351,1016,UPI,,2025-09-29 17:33:49.125471+00
+352,299,UPI,,2025-09-29 17:35:29.497914+00
+353,229,UPI,Packing,2025-09-29 17:36:42.954015+00
+354,199,UPI,,2025-09-29 17:37:29.017075+00
+355,558,UPI,,2025-09-29 17:49:36.595111+00
+356,269,UPI,,2025-09-29 17:54:59.809749+00
+357,199,UPI,,2025-09-30 13:56:15.784731+00
+358,279,UPI,,2025-09-30 13:58:24.099956+00
+359,798,UPI,,2025-09-30 14:08:16.380194+00
+360,798,UPI,Packing,2025-09-30 14:08:39.91556+00
+361,199,UPI,,2025-09-30 14:10:34.209839+00
+362,319,UPI,,2025-09-30 14:13:41.624795+00
+363,199,UPI,,2025-09-30 14:17:24.844395+00
+364,259,UPI,,2025-09-30 14:18:52.271656+00
+365,199,UPI,,2025-09-30 14:25:07.116719+00
+366,299,UPI,,2025-09-30 14:27:55.006188+00
+367,299,UPI,Packing,2025-09-30 14:28:10.747798+00
+368,279,UPI,,2025-09-30 14:31:34.421969+00
+369,339,UPI,,2025-09-30 14:41:42.3037+00
+370,538,UPI,,2025-09-30 14:50:51.485991+00
+371,498,UPI,Packing,2025-09-30 14:52:57.639187+00
+372,299,UPI,,2025-09-30 14:57:58.23091+00
+373,179,UPI,,2025-09-30 14:58:29.31813+00
+374,249,UPI,,2025-09-30 15:02:32.986006+00
+375,319,UPI,,2025-09-30 15:03:18.478653+00
+376,169,UPI,,2025-09-30 15:03:44.562898+00
+377,189,UPI,,2025-09-30 15:04:02.051446+00
+378,199,UPI,,2025-09-30 15:04:30.136624+00
+379,518,UPI,Packing + No Cream,2025-09-30 15:12:16.20997+00
+380,159,UPI,,2025-09-30 15:18:03.756646+00
+381,169,UPI,,2025-09-30 15:18:35.545229+00
+382,279,UPI,,2025-09-30 15:23:42.784859+00
+383,568,UPI,,2025-09-30 15:26:38.580232+00
+384,159,UPI,,2025-09-30 15:27:17.182223+00
+385,279,UPI,,2025-09-30 15:29:08.911507+00
+386,179,UPI,,2025-09-30 15:31:27.257696+00
+387,398,UPI,,2025-09-30 15:35:25.118647+00
+388,379,UPI,,2025-09-30 15:37:11.01549+00
+389,279,UPI,,2025-09-30 15:38:36.73046+00
+390,179,UPI,,2025-09-30 15:38:48.048876+00
+391,378,UPI,,2025-09-30 15:42:05.119025+00
+392,429,UPI,Packing,2025-09-30 15:44:48.652565+00
+393,229,UPI,,2025-09-30 15:50:49.203059+00
+394,219,UPI,Packing,2025-09-30 15:51:59.906056+00
+395,199,UPI,,2025-09-30 15:52:39.466482+00
+396,169,UPI,,2025-09-30 15:55:46.059203+00
+397,399,UPI,Packing,2025-09-30 15:59:21.986071+00
+398,239,UPI,,2025-09-30 16:02:10.503394+00
+399,458,UPI,,2025-09-30 16:04:51.5858+00
+400,319,UPI,,2025-09-30 16:05:18.601927+00
+401,388,UPI,Packing,2025-09-30 16:06:30.485917+00
+402,229,UPI,,2025-09-30 16:07:25.048356+00
+403,239,UPI,,2025-09-30 16:08:11.522733+00
+404,728,UPI,Packing + Less Spicy,2025-09-30 16:11:12.65675+00
+405,299,UPI,Medium Spicy,2025-09-30 16:12:09.034269+00
+406,179,UPI,,2025-09-30 16:15:37.586921+00
+407,399,UPI,,2025-09-30 16:16:36.538287+00
+408,459,Cash,,2025-09-30 16:17:28.55713+00
+409,259,Cash,Dry,2025-09-30 16:19:34.888764+00
+410,259,UPI,DRY,2025-09-30 16:19:49.382557+00
+411,179,Cash,,2025-09-30 16:20:53.495154+00
+412,249,UPI,packing,2025-09-30 16:21:46.461806+00
+413,239,UPI,Packing,2025-09-30 16:24:48.775616+00
+414,538,UPI,Packing,2025-09-30 16:26:04.069892+00
+415,239,UPI,,2025-09-30 16:26:49.478307+00
+416,429,UPI,,2025-09-30 16:27:10.456918+00
+417,279,UPI,Packing,2025-09-30 16:27:47.734515+00
+418,359,Cash,,2025-09-30 16:33:40.843826+00
+419,558,UPI,,2025-09-30 16:36:08.696563+00
+420,558,UPI,Packing,2025-09-30 16:37:01.185931+00
+421,428,UPI,,2025-09-30 16:38:11.848158+00
+422,279,UPI,,2025-09-30 16:40:17.133539+00
+423,249,UPI,,2025-09-30 16:40:42.386329+00
+424,677,UPI,,2025-09-30 16:46:31.748126+00
+425,299,UPI,Packing,2025-09-30 16:47:54.906211+00
+426,199,UPI,Packing,2025-09-30 16:48:35.645346+00
+427,558,UPI,Packing,2025-09-30 16:50:07.104424+00
+428,279,UPI,,2025-09-30 16:51:00.497134+00
+429,618,UPI,,2025-09-30 16:54:41.974055+00
+430,339,UPI,Packing,2025-09-30 16:58:28.4146+00
+431,209,UPI,,2025-09-30 16:59:13.591126+00
+432,169,UPI,,2025-09-30 16:59:57.710553+00
+433,179,UPI,,2025-09-30 17:01:17.953254+00
