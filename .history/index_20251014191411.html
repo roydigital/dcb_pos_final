@@ -1000,84 +1000,12 @@
                     return null;
                 }
 
-                const orderType = document.querySelector('input[name="orderType"]:checked').value;
-                const note = ""; // Non-interactive
-                const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-                fbq('track', 'InitiateCheckout', {
-                    contents: cart.map(item => ({ id: item.cartId, quantity: item.quantity })),
-                    num_items: cart.reduce((total, item) => total + item.quantity, 0),
-                    value: grandTotal.toFixed(2),
-                    currency: 'INR'
-                });
-
-                try {
-                    const { data: existingCustomer, error: customerCheckError } = await supabaseClient
-                        .from('customers').select('user_id').eq('user_id', session.user.id).single();
-
-                    let customerUserId;
-                    if (customerCheckError || !existingCustomer) {
-                        const { data: newCustomer, error: createCustomerError } = await supabaseClient
-                            .from('customers')
-                            .insert({
-                                user_id: session.user.id, email: session.user.email,
-                                first_name: session.user.user_metadata?.first_name || 'Customer', last_name: session.user.user_metadata?.last_name || '',
-                                mobile_number: '0000000000', building_no: 'N/A', area: 'N/A', city: 'N/A', state: 'N/A', pin_code: '000000',
-                                password_hash: 'auto_created_during_order'
-                            }).select().single();
-                        if (createCustomerError) throw createCustomerError;
-                        customerUserId = newCustomer.user_id;
-                    } else {
-                        customerUserId = existingCustomer.user_id;
-                    }
-
-                    const finalNote = transactionId ? `Razorpay TXN ID: ${transactionId}. ${note || ''}`.trim() : note;
-
-                    const { data: orderData, error: orderError } = await supabaseClient
-                        .from('orders')
-                        .insert({
-                            customer_id: customerUserId,
-                            grand_total: grandTotal.toFixed(2),
-                            payment_mode: paymentMode,
-                            order_type: orderType,
-                            status: 'Pending',
-                            note: finalNote,
-                        }).select().single();
-
-                    if (orderError) throw orderError;
-
-                    const orderItems = cart.map(item => ({
-                        order_id: orderData.id, item_name: item.name, variant: item.option,
-                        quantity: item.quantity, price_per_unit: item.price.toFixed(2),
-                    }));
-
-                    const { error: itemsError } = await supabaseClient.from('order_items').insert(orderItems);
-                    if (itemsError) throw itemsError;
-
-                    fbq('track', 'Purchase', {
-                        value: grandTotal.toFixed(2), currency: 'INR',
-                        content_ids: cart.map(item => item.cartId), content_type: 'product',
-                        num_items: cart.reduce((total, item) => total + item.quantity, 0),
-                        order_id: orderData.id
-                    });
-                    
-                    // Clear cart after successful order creation
-                    cart = [];
-                    updateCart();
-                    closeCart();
-
-                    return orderData;
-                } catch (error) {
-                    console.error('Order Creation Error:', error);
-                    alert(`Error placing order: ${error.message}`);
-                    return null;
-                }
-            };
-
-            async function handleCheckout() {
-                const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) {
-                    if (cart.length > 0) localStorage.setItem('dcb_unauthenticated_cart', JSON.stringify(cart));
+                    // Not logged in, save cart and redirect to auth page with a flag
+                    if (cart.length > 0) {
+                        localStorage.setItem('dcb_unauthenticated_cart', JSON.stringify(cart));
+                    }
                     window.location.href = 'auth.html?from=cart';
                     return;
                 }
@@ -1087,28 +1015,147 @@
                     return;
                 }
 
+                // Get selected checkout options
+                const orderType = document.querySelector('input[name="orderType"]:checked').value;
                 const paymentMode = document.querySelector('input[name="paymentMethod"]:checked').value;
-                const checkoutBtn = document.getElementById('proceedCheckout');
-
+                
+                // If payment mode is UPI, let Razorpay handle it
                 if (paymentMode === "UPI") {
-                    triggerRazorpayCheckout();
-                } else { // Handle Cash orders
-                    checkoutBtn.disabled = true;
-                    checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
+                    console.log("UPI payment selected - Razorpay should handle this");
+                    return; // Let Razorpay script handle UPI payments
+                }
 
-                    const orderData = await window.createOrderInSupabase('Cash');
+                const note = prompt("Any special instructions? (Optional)");
 
-                    if (orderData) {
-                        window.location.href = `order-status.html?order_id=${orderData.id}`;
+                const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const taxableValue = grandTotal / 1.05;
+                const taxes = grandTotal - taxableValue;
+
+                // Meta Pixel InitiateCheckout Event
+                fbq('track', 'InitiateCheckout', {
+                    contents: cart.map(item => ({ id: item.cartId, quantity: item.quantity })),
+                    num_items: cart.reduce((total, item) => total + item.quantity, 0),
+                    value: grandTotal.toFixed(2),
+                    currency: 'INR'
+                });
+
+                checkoutBtn.disabled = true;
+                checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
+
+                try {
+                    // 1. First, get or create customer record - FIXED APPROACH
+                    // Check if customer exists for this user - we need both id (bigint) and user_id (uuid)
+                    const { data: existingCustomer, error: customerCheckError } = await supabaseClient
+                        .from('customers')
+                        .select('id, user_id')
+                        .eq('user_id', session.user.id)
+                        .single();
+
+                    let customerUserId;
+
+                    if (customerCheckError || !existingCustomer) {
+                        // Customer doesn't exist, create one
+                        const { data: newCustomer, error: createCustomerError } = await supabaseClient
+                            .from('customers')
+                            .insert({
+                                user_id: session.user.id, // This is the UUID that matches orders.customer_id
+                                email: session.user.email,
+                                first_name: session.user.user_metadata?.first_name || 'Customer',
+                                last_name: session.user.user_metadata?.last_name || '',
+                                mobile_number: '0000000000', // Required field, provide default
+                                building_no: 'N/A', // Required field, provide default
+                                area: 'N/A', // Required field, provide default
+                                city: 'N/A', // Required field, provide default
+                                state: 'N/A', // Required field, provide default
+                                pin_code: '000000', // Required field, provide default
+                                landmark: '',
+                                password_hash: 'auto_created_during_order'
+                            })
+                            .select()
+                            .single();
+
+                        if (createCustomerError) {
+                            console.error('Customer creation error:', createCustomerError);
+                            throw new Error(`Failed to create customer: ${createCustomerError.message}`);
+                        }
+                        customerUserId = newCustomer.user_id; // Use the UUID user_id, not the bigint id
                     } else {
-                        // Re-enable button on failure
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerHTML = `
-                            <i data-lucide="lock" class="h-5 w-5"></i>
-                            Proceed to Checkout
-                        `;
-                        lucide.createIcons();
+                        customerUserId = existingCustomer.user_id; // Use the UUID user_id, not the bigint id
                     }
+
+                    console.log('Using customer user_id (UUID):', customerUserId, 'Type:', typeof customerUserId);
+
+                    // 2. Insert the main order with proper customer_id (UUID)
+                    const { data: orderData, error: orderError } = await supabaseClient
+                        .from('orders')
+                        .insert({
+                            customer_id: customerUserId, // This should be UUID from customers.user_id
+                            grand_total: grandTotal.toFixed(2),
+                            payment_mode: paymentMode,
+                            order_type: orderType,
+                            status: 'Pending',
+                            note: note,
+                        })
+                        .select()
+                        .single();
+
+                    if (orderError) {
+                        console.error('Order insertion error:', orderError);
+                        throw new Error(`Failed to create order: ${orderError.message}`);
+                    }
+
+                    // 3. Prepare order items
+                    const orderItems = cart.map(item => ({
+                        order_id: orderData.id,
+                        item_name: item.name,
+                        variant: item.option,
+                        quantity: item.quantity,
+                        price_per_unit: item.price.toFixed(2),
+                    }));
+
+                    // 4. Insert order items
+                    const { error: itemsError } = await supabaseClient
+                        .from('order_items')
+                        .insert(orderItems);
+
+                    if (itemsError) {
+                        console.error('Order items insertion error:', itemsError);
+                        throw new Error(`Failed to add order items: ${itemsError.message}`);
+                    }
+
+                    // 5. Success & Redirect
+                    
+                    // Meta Pixel Purchase Event
+                    // This is the most important event for tracking conversions.
+                    fbq('track', 'Purchase', {
+                        value: grandTotal.toFixed(2),
+                        currency: 'INR',
+                        content_ids: cart.map(item => item.cartId),
+                        content_type: 'product',
+                        num_items: cart.reduce((total, item) => total + item.quantity, 0),
+                        order_id: orderData.id // Sending order_id is crucial for CAPI deduplication
+                    });
+                    
+                    // For maximum reliability, it's highly recommended to also send this 'Purchase' event
+                    // from your server using the Meta Conversions API (CAPI). This ensures tracking
+                    // even if the user has ad-blockers or browser issues.
+
+                    window.location.href = `order-status.html?order_id=${orderData.id}`;
+                    
+                    cart = []; // Clear the cart
+                    updateCart();
+                    closeCart();
+
+                } catch (error) {
+                    console.error('Checkout Error Details:', error);
+                    alert(`Error placing order: ${error.message}`);
+                } finally {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.innerHTML = `
+                        <i data-lucide="lock" class="h-5 w-5"></i>
+                        Proceed to Checkout
+                    `;
+                    lucide.createIcons();
                 }
             }
             
