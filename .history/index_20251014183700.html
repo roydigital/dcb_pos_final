@@ -1018,13 +1018,6 @@
                 // Get selected checkout options
                 const orderType = document.querySelector('input[name="orderType"]:checked').value;
                 const paymentMode = document.querySelector('input[name="paymentMethod"]:checked').value;
-                
-                // If payment mode is UPI, let Razorpay handle it
-                if (paymentMode === "UPI") {
-                    console.log("UPI payment selected - Razorpay should handle this");
-                    return; // Let Razorpay script handle UPI payments
-                }
-
                 const note = prompt("Any special instructions? (Optional)");
 
                 const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

@@ -527,10 +527,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Supabase Client Setup - Make it globally available
+            // Supabase Client Setup
             const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
-            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
             // Initialize lucide icons
             lucide.createIcons();
@@ -952,7 +952,7 @@
             const closeCartBtn = document.getElementById('close-cart');
             const cartSidebar = document.getElementById('cart-sidebar');
             const cartOverlay = document.getElementById('cart-overlay');
-            const checkoutBtn = document.getElementById('proceedCheckout');
+            const checkoutBtn = document.getElementById('checkout-button');
             
             const openCart = () => {
                 cartSidebar.classList.remove('translate-x-full');
@@ -968,45 +968,12 @@
             cartOverlay.addEventListener('click', closeCart);
             checkoutBtn.addEventListener('click', handleCheckout);
 
-            async function restoreCartAfterLogin() {
-                const savedCartJSON = localStorage.getItem('dcb_unauthenticated_cart');
-                if (!savedCartJSON) return;
-
-                try {
-                    const savedCartItems = JSON.parse(savedCartJSON);
-                    if (Array.isArray(savedCartItems) && savedCartItems.length > 0) {
-                        // Merge with existing cart
-                        savedCartItems.forEach(item => {
-                            const existingItem = cart.find(i => i.cartId === item.cartId);
-                            if (existingItem) {
-                                existingItem.quantity += item.quantity;
-                            } else {
-                                cart.push(item);
-                            }
-                        });
-                        
-                        localStorage.removeItem('dcb_unauthenticated_cart');
-                        updateCart();
-                        
-                        // Open the cart to show the restored items.
-                        openCart();
-                    }
-                } catch (e) {
-                    console.error("Error restoring cart from localStorage:", e);
-                    // Clean up corrupted data
-                    localStorage.removeItem('dcb_unauthenticated_cart');
-                }
-            }
-
             async function handleCheckout() {
                 const { data: { session } } = await supabaseClient.auth.getSession();
 
                 if (!session) {
-                    // Not logged in, save cart and redirect to auth page with a flag
-                    if (cart.length > 0) {
-                        localStorage.setItem('dcb_unauthenticated_cart', JSON.stringify(cart));
-                    }
-                    window.location.href = 'auth.html?from=cart';
+                    // Not logged in, redirect to auth page
+                    window.location.href = 'auth.html';
                     return;
                 }
 
@@ -1018,13 +985,6 @@
                 // Get selected checkout options
                 const orderType = document.querySelector('input[name="orderType"]:checked').value;
                 const paymentMode = document.querySelector('input[name="paymentMethod"]:checked').value;
-                
-                // If payment mode is UPI, let Razorpay handle it
-                if (paymentMode === "UPI") {
-                    console.log("UPI payment selected - Razorpay should handle this");
-                    return; // Let Razorpay script handle UPI payments
-                }
-
                 const note = prompt("Any special instructions? (Optional)");
 
                 const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -1162,7 +1122,8 @@
             // Session Management
             const authContainer = document.getElementById('auth-container');
 
-            async function setupAuthUI(session) {
+            async function setupAuthUI() {
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     // User is logged in - get profile data to display name
                     const { data: profile, error } = await supabaseClient
@@ -1205,31 +1166,12 @@
                 }
             }
 
+
             // Initial Render - Await rendering before setting up auth to prevent race conditions
             await fetchAndRenderMenu();
             loadReorderCart(); // Load any reorder items from localStorage
-            await restoreCartAfterLogin(); // Restore cart on initial load
-            
-            // Check if we need to open the cart on page load
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('cart') === 'open') {
-                openCart();
-            }
-            
             updateCart();
-            
-            // Setup auth UI and listen for changes
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                setupAuthUI(session);
-                if (event === 'SIGNED_IN') {
-                    restoreCartAfterLogin();
-                }
-            });
-
-            // Initial call to setupAuthUI
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            setupAuthUI(session);
-
+            await setupAuthUI();
 
             // --- Customer Coupon Logic ---
             const customerCouponInput = document.getElementById('customer-coupon-code');
@@ -1362,171 +1304,169 @@
 
             // Initialize Order Status Bar
             initializeOrderStatusBar();
+        });
 
-            // Order Status Bar Management
-            function initializeOrderStatusBar() {
-                const bar = document.getElementById('order-status-bar');
-                const orderIdElement = document.getElementById('bar-order-id');
-                const orderStatusElement = document.getElementById('bar-order-status');
-                const orderTimeElement = document.getElementById('bar-order-time');
-                const viewButton = document.getElementById('view-order-details');
-                
-                let currentOrderId = null;
-                let realtimeSubscription = null;
+        // Order Status Bar Management
+        function initializeOrderStatusBar() {
+            const bar = document.getElementById('order-status-bar');
+            const orderIdElement = document.getElementById('bar-order-id');
+            const orderStatusElement = document.getElementById('bar-order-status');
+            const orderTimeElement = document.getElementById('bar-order-time');
+            const viewButton = document.getElementById('view-order-details');
+            
+            let currentOrderId = null;
+            let realtimeSubscription = null;
 
-                function showOrderStatusNotification(orderId, status) {
-                    if (document.hidden && Notification.permission === 'granted') {
-                        const notification = new Notification('Delhi Chicken Brothers', {
-                            body: `Order #${orderId} is now ${status}.`,
-                            icon: 'https://dcbchicken.com/images/logo.png'
-                        });
-                    }
-                }
-                
-                // Set up click handler
-                viewButton.addEventListener('click', () => {
-                    if (currentOrderId) {
-                        window.location.href = `order-status.html?order_id=${currentOrderId}`;
-                    }
-                });
-
-                // Check for active orders on page load
-                checkActiveOrders();
-
-                async function checkActiveOrders() {
-                    try {
-                        const { data: { session } } = await supabaseClient.auth.getSession();
-                        if (!session) return;
-
-                        console.log('Checking active orders for user:', session.user.id);
-
-                        // Get customer record first
-                        const { data: customer, error: customerError } = await supabaseClient
-                            .from('customers')
-                            .select('user_id')
-                            .eq('user_id', session.user.id)
-                            .single();
-
-                        if (customerError || !customer) {
-                            console.log('No customer record found for user:', session.user.id);
-                            hideBar();
-                            return;
-                        }
-
-                        console.log('Customer found:', customer);
-
-                        // Check for active orders (not delivered or cancelled)
-                        // Since status is an enum, we need to check what values exist
-                        const { data: orders, error } = await supabaseClient
-                            .from('orders')
-                            .select('id, status, created_at')
-                            .eq('customer_id', customer.user_id)
-                            .not('status', 'in', '("Delivered", "Cancelled", "Declined")')
-                            .order('created_at', { ascending: false })
-                            .limit(1);
-
-                        console.log('Orders query result:', orders, 'Error:', error);
-
-                        if (error) {
-                            console.error('Error fetching orders:', error);
-                            hideBar();
-                            return;
-                        }
-
-                        if (!orders || orders.length === 0) {
-                            console.log('No active orders found');
-                            hideBar();
-                            return;
-                        }
-
-                        const activeOrder = orders[0];
-                        console.log('Active order found:', activeOrder);
-                        showOrder(activeOrder);
-                        setupRealtimeUpdates(activeOrder.id);
-
-                    } catch (error) {
-                        console.error('Error checking active orders:', error);
-                    }
-                }
-
-                function showOrder(order) {
-                    currentOrderId = order.id;
-                    orderIdElement.textContent = order.id;
-                    orderStatusElement.textContent = order.status;
-                    orderTimeElement.textContent = formatTimeAgo(order.created_at);
-                    
-                    // Show the bar with animation
-                    bar.classList.remove('translate-y-full', 'hidden');
-                    bar.classList.add('translate-y-0');
-                    
-                    // Reinitialize icons
-                    lucide.createIcons();
-                }
-
-                function hideBar() {
-                    bar.classList.remove('translate-y-0');
-                    bar.classList.add('translate-y-full');
-                    
-                    // Hide after animation completes
-                    setTimeout(() => {
-                        bar.classList.add('hidden');
-                    }, 300);
-                    
-                    if (realtimeSubscription) {
-                        realtimeSubscription.unsubscribe();
-                    }
-                }
-
-                function setupRealtimeUpdates(orderId) {
-                    if (realtimeSubscription) {
-                        realtimeSubscription.unsubscribe();
-                    }
-
-                    realtimeSubscription = supabaseClient
-                        .channel(`order-bar-${orderId}`)
-                        .on('postgres_changes', 
-                            { 
-                                event: 'UPDATE', 
-                                schema: 'public', 
-                                table: 'orders',
-                                filter: `id=eq.${orderId}`
-                            },
-                            (payload) => {
-                                const newStatus = payload.new.status;
-                                orderStatusElement.textContent = newStatus;
-                                orderTimeElement.textContent = 'Just updated';
-
-                                showOrderStatusNotification(orderId, newStatus);
-                                
-                                // If order is delivered or cancelled, hide the bar after a delay
-                                if (['Delivered', 'Cancelled', 'Declined'].includes(newStatus)) {
-                                    setTimeout(() => {
-                                        hideBar();
-                                    }, 5000); // Hide after 5 seconds
-                                }
-                            }
-                        )
-                        .subscribe();
-                }
-
-                function formatTimeAgo(timestamp) {
-                    const now = new Date();
-                    const orderTime = new Date(timestamp);
-                    const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
-                    
-                    if (diffInMinutes < 1) return 'Just now';
-                    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-                    
-                    const diffInHours = Math.floor(diffInMinutes / 60);
-                    if (diffInHours < 24) return `${diffInHours}h ago`;
-                    
-                    const diffInDays = Math.floor(diffInHours / 24);
-                    return `${diffInDays}d ago`;
+            function showOrderStatusNotification(orderId, status) {
+                if (document.hidden && Notification.permission === 'granted') {
+                    const notification = new Notification('Delhi Chicken Brothers', {
+                        body: `Order #${orderId} is now ${status}.`,
+                        icon: 'https://dcbchicken.com/images/logo.png'
+                    });
                 }
             }
-        });
+            
+            // Set up click handler
+            viewButton.addEventListener('click', () => {
+                if (currentOrderId) {
+                    window.location.href = `order-status.html?order_id=${currentOrderId}`;
+                }
+            });
+
+            // Check for active orders on page load
+            checkActiveOrders();
+
+            async function checkActiveOrders() {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) return;
+
+                    console.log('Checking active orders for user:', session.user.id);
+
+                    // Get customer record first
+                    const { data: customer, error: customerError } = await supabaseClient
+                        .from('customers')
+                        .select('user_id')
+                        .eq('user_id', session.user.id)
+                        .single();
+
+                    if (customerError || !customer) {
+                        console.log('No customer record found for user:', session.user.id);
+                        hideBar();
+                        return;
+                    }
+
+                    console.log('Customer found:', customer);
+
+                    // Check for active orders (not delivered or cancelled)
+                    // Since status is an enum, we need to check what values exist
+                    const { data: orders, error } = await supabaseClient
+                        .from('orders')
+                        .select('id, status, created_at')
+                        .eq('customer_id', customer.user_id)
+                        .not('status', 'in', '("Delivered", "Cancelled", "Declined")')
+                        .order('created_at', { ascending: false })
+                        .limit(1);
+
+                    console.log('Orders query result:', orders, 'Error:', error);
+
+                    if (error) {
+                        console.error('Error fetching orders:', error);
+                        hideBar();
+                        return;
+                    }
+
+                    if (!orders || orders.length === 0) {
+                        console.log('No active orders found');
+                        hideBar();
+                        return;
+                    }
+
+                    const activeOrder = orders[0];
+                    console.log('Active order found:', activeOrder);
+                    showOrder(activeOrder);
+                    setupRealtimeUpdates(activeOrder.id);
+
+                } catch (error) {
+                    console.error('Error checking active orders:', error);
+                }
+            }
+
+            function showOrder(order) {
+                currentOrderId = order.id;
+                orderIdElement.textContent = order.id;
+                orderStatusElement.textContent = order.status;
+                orderTimeElement.textContent = formatTimeAgo(order.created_at);
+                
+                // Show the bar with animation
+                bar.classList.remove('translate-y-full', 'hidden');
+                bar.classList.add('translate-y-0');
+                
+                // Reinitialize icons
+                lucide.createIcons();
+            }
+
+            function hideBar() {
+                bar.classList.remove('translate-y-0');
+                bar.classList.add('translate-y-full');
+                
+                // Hide after animation completes
+                setTimeout(() => {
+                    bar.classList.add('hidden');
+                }, 300);
+                
+                if (realtimeSubscription) {
+                    realtimeSubscription.unsubscribe();
+                }
+            }
+
+            function setupRealtimeUpdates(orderId) {
+                if (realtimeSubscription) {
+                    realtimeSubscription.unsubscribe();
+                }
+
+                realtimeSubscription = supabaseClient
+                    .channel(`order-bar-${orderId}`)
+                    .on('postgres_changes', 
+                        { 
+                            event: 'UPDATE', 
+                            schema: 'public', 
+                            table: 'orders',
+                            filter: `id=eq.${orderId}`
+                        },
+                        (payload) => {
+                            const newStatus = payload.new.status;
+                            orderStatusElement.textContent = newStatus;
+                            orderTimeElement.textContent = 'Just updated';
+
+                            showOrderStatusNotification(orderId, newStatus);
+                            
+                            // If order is delivered or cancelled, hide the bar after a delay
+                            if (['Delivered', 'Cancelled', 'Declined'].includes(newStatus)) {
+                                setTimeout(() => {
+                                    hideBar();
+                                }, 5000); // Hide after 5 seconds
+                            }
+                        }
+                    )
+                    .subscribe();
+            }
+
+            function formatTimeAgo(timestamp) {
+                const now = new Date();
+                const orderTime = new Date(timestamp);
+                const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
+                
+                if (diffInMinutes < 1) return 'Just now';
+                if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+                
+                const diffInHours = Math.floor(diffInMinutes / 60);
+                if (diffInHours < 24) return `${diffInHours}h ago`;
+                
+                const diffInDays = Math.floor(diffInHours / 24);
+                return `${diffInDays}d ago`;
+            }
+        }
     </script>
-    <script src="frontend/razorpay-checkout.js"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>

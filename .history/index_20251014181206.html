@@ -527,10 +527,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Supabase Client Setup - Make it globally available
+            // Supabase Client Setup
             const SUPABASE_URL = 'https://kjbelegkbusvtvtcgwhq.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqYmVsZWdrYnVzdnR2dGNnd2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI5ODIsImV4cCI6MjA3NDA5ODk4Mn0.-K-rkuJnyDPL5YnkJ62-UG1_mG0BIILMUEZpSTNnq5M';
-            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
             // Initialize lucide icons
             lucide.createIcons();
@@ -1018,13 +1018,6 @@
                 // Get selected checkout options
                 const orderType = document.querySelector('input[name="orderType"]:checked').value;
                 const paymentMode = document.querySelector('input[name="paymentMethod"]:checked').value;
-                
-                // If payment mode is UPI, let Razorpay handle it
-                if (paymentMode === "UPI") {
-                    console.log("UPI payment selected - Razorpay should handle this");
-                    return; // Let Razorpay script handle UPI payments
-                }
-
                 const note = prompt("Any special instructions? (Optional)");
 
                 const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -1527,6 +1520,6 @@
         });
     </script>
     <script src="frontend/razorpay-checkout.js"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="frontend/razorpay-checkout.js"></script>
 </body>
 </html>

@@ -1025,13 +1025,6 @@
                     return; // Let Razorpay script handle UPI payments
                 }
 
-                const note = prompt("Any special instructions? (Optional)");
-
-                const grandTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                const taxableValue = grandTotal / 1.05;
-                const taxes = grandTotal - taxableValue;
-
-                // Meta Pixel InitiateCheckout Event
                 fbq('track', 'InitiateCheckout', {
                     contents: cart.map(item => ({ id: item.cartId, quantity: item.quantity })),
                     num_items: cart.reduce((total, item) => total + item.quantity, 0),

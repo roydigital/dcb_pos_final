@@ -1,0 +1,6 @@
+In the @/index.html file, when a non-logged-in user adds items to the cart and then clicks "Proceed to Checkout", they are redirected to the Sign-In page (@/auth.html).
+
+However, after the user successfully signs in — either manually (email/password) or via Google Sign-In — the cart data resets to empty.
+All previously selected items disappear, forcing the user to start over and re-add items to the cart.
+
+This behavior is not ideal. The system should retain the user's cart items across the authentication flow.
