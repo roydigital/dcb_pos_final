@@ -846,18 +846,6 @@
                 console.error('Error loading customer details:', error);
                 customerProfile.innerHTML = `
                     <div class="text-center py-8">
-                        <i data-lucide="alert-circle" class="h-16 w-16 text-red-500 mx-auto mb-4"></i>
-                        <p class="text-red-600">Failed to load customer details.</p>
-                        <p class="text-sm text-gray-500 mt-2">Error: ${error.message}</p>
-                    </div>
-                `;
-                lucide.createIcons();
-            } finally {
-                hideProfileLoading();
-            }
-        }
-
-        function renderCustomerProfile(customer, orders, customerOrderItems) {
             const badge = getCustomerBadge(customer.type);
             
             customerProfile.innerHTML = `
@@ -965,7 +953,7 @@
                     ${orders.length > 0 ? `
                         <div class="space-y-4">
                             ${orders.slice(0, 10).map(order => {
-                                const currentOrderItems = customerOrderItems.filter(item => item.order_id === order.id);
+                                const orderItems = orderItems.filter(item => item.order_id === order.id);
                                 return `
                                     <div class="bg-white border border-gray-200 rounded-lg p-4">
                                         <div class="flex justify-between items-start mb-2">
@@ -986,7 +974,7 @@
                                             </div>
                                         </div>
                                         <div class="text-sm text-gray-600">
-                                            ${currentOrderItems.map(item => `${item.quantity}x ${item.item_name} (${item.variant})`).join(', ')}
+                                            ${orderItems.map(item => `${item.quantity}x ${item.item_name} (${item.variant})`).join(', ')}
                                         </div>
                                         ${order.note ? `
                                             <div class="mt-2 text-sm text-gray-500">

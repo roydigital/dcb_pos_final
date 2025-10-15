@@ -50,6 +50,23 @@ app.post("/verify-payment", async (req, res) => {
   } else {
     res.status(400).json({ success: false, message: "Invalid signature" });
   }
+      data: [{
+        event_name: "Purchase",
+        event_time: Math.floor(Date.now() / 1000),
+        action_source: "website",
+        event_source_url: process.env.FRONTEND_URL,
+        custom_data: { currency: "INR", value: 1 }
+      }],
+      access_token: process.env.META_ACCESS_TOKEN
+    });
+
+    res.json({
+      success: true,
+      redirectUrl: `${process.env.FRONTEND_URL}/order-status.html?order_id=${razorpay_order_id}`
+    });
+  } else {
+    res.status(400).json({ success: false, message: "Invalid signature" });
+  }
 });
 
 app.listen(8080, () => console.log("✅ DCB Razorpay Server running on port 8080"));
