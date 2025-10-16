@@ -780,10 +780,12 @@
                         { event: 'INSERT', schema: 'public', table: 'orders' },
                         payload => {
                             console.log("🆕 New order received:", payload);
-                            // Play buzzer automatically
+                            // Play buzzer
                             const notificationSound = document.getElementById('notification-sound');
-                            notificationSound.currentTime = 0;
-                            notificationSound.play().catch(err => console.warn('Sound play failed:', err));
+                            if (localStorage.getItem('soundEnabled') === 'true') {
+                                notificationSound.currentTime = 0;
+                                notificationSound.play().catch(err => console.warn('Sound play failed:', err));
+                            }
 
                             // Add visual alert (optional)
                             alert('🚨 New Order Received!');

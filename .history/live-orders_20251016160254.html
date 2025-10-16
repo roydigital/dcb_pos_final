@@ -279,6 +279,8 @@
                 const editGrandTotalEl = document.getElementById('edit-grand-total');
                 const saveOrderChangesBtn = document.getElementById('save-order-changes-btn');
                 const notificationSound = document.getElementById('notification-sound');
+                const soundPermissionModal = document.getElementById('sound-permission-modal');
+                const enableSoundBtn = document.getElementById('enable-sound-btn');
     
                 // State
                 let allOrders = [];
@@ -389,13 +391,49 @@
             editMenuSearch.addEventListener('input', () => renderMenuForEdit(editMenuSearch.value));
             saveOrderChangesBtn.addEventListener('click', saveOrderChanges);
 
+            enableSoundBtn.addEventListener('click', () => {
+                const playPromise = notificationSound.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // Play started successfully. Pause it immediately to "unlock" audio.
+                        notificationSound.pause();
+                        notificationSound.currentTime = 0;
+
+                        localStorage.setItem('soundEnabled', 'true');
+                        soundPermissionModal.classList.add('hidden');
+                        showNotification('Sound enabled successfully!', 'success');
+                        
+                        // Now that sound is enabled, check if we need to play it for existing pending orders
+                        updateNotificationSound();
+                    }).catch(error => {
+                        console.error('Could not enable sound:', error);
+                        showNotification('Could not enable sound. Please check browser settings and permissions.', 'error');
+                    });
+                }
+            });
+
+            // At the end of the Initialize section, check for sound permission
+            if (localStorage.getItem('soundEnabled') !== 'true') {
+                soundPermissionModal.classList.remove('hidden');
+            }
+
             function updateNotificationSound() {
+                // Only attempt to play sound if permission has been granted
+                if (localStorage.getItem('soundEnabled') !== 'true') {
+                    return;
+                }
+
                 if (unacknowledgedOrders.size > 0) {
                     const playPromise = notificationSound.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(error => {
                             console.error("Audio playback failed:", error);
-                            showNotification('Could not play sound. Please check browser settings and permissions.', 'error');
+                            // If playback fails after permission was granted, the user might have revoked it.
+                            // Prompt them again.
+                            localStorage.removeItem('soundEnabled');
+                            soundPermissionModal.classList.remove('hidden');
+                            showNotification('Could not play sound. Please re-enable audio.', 'error');
                         });
                     }
                 } else {
@@ -780,10 +818,12 @@
                         { event: 'INSERT', schema: 'public', table: 'orders' },
                         payload => {
                             console.log("🆕 New order received:", payload);
-                            // Play buzzer automatically
+                            // Play buzzer
                             const notificationSound = document.getElementById('notification-sound');
-                            notificationSound.currentTime = 0;
-                            notificationSound.play().catch(err => console.warn('Sound play failed:', err));
+                            if (localStorage.getItem('soundEnabled') === 'true') {
+                                notificationSound.currentTime = 0;
+                                notificationSound.play().catch(err => console.warn('Sound play failed:', err));
+                            }
 
                             // Add visual alert (optional)
                             alert('🚨 New Order Received!');

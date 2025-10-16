@@ -800,6 +800,8 @@
                 setInterval(() => {
                     supabaseClient.channel('keepalive').send({ type: 'ping' });
                 }, 50000);
+                    supabaseClient.channel('keepalive').send({ type: 'ping' });
+                }, 50000);
             }
 
             async function handleNewOrder(newOrderData) {
