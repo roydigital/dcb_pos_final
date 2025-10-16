@@ -1077,9 +1077,6 @@
                     alert(`Error placing order: ${error.message}`);
                     return null;
                 }
-            };
-
-            async function handleCheckout() {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) {
                     if (cart.length > 0) localStorage.setItem('dcb_unauthenticated_cart', JSON.stringify(cart));
