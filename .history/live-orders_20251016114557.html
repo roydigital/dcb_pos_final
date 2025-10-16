@@ -845,11 +845,9 @@
                     .subscribe(status => {
                         console.log("Realtime subscription status:", status);
                     });
-
-                // Add keep-alive ping to maintain connection
-                setInterval(() => {
-                    supabaseClient.channel('keepalive').send({ type: 'ping' });
-                }, 50000);
+                            console.log('Real-time subscription active');
+                        }
+                    });
             }
 
             async function handleNewOrder(newOrderData) {

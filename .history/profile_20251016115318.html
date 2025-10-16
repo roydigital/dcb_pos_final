@@ -750,11 +750,6 @@
                 setInterval(() => {
                     supabaseClient.channel('keepalive').send({ type: 'ping' });
                 }, 50000);
-            }
-
-            function formatTimeAgo(timestamp) {
-                const now = new Date();
-                const orderTime = new Date(timestamp);
                 const diffInMinutes = Math.floor((now - orderTime) / (1000 * 60));
                 
                 if (diffInMinutes < 1) return 'Just now';

@@ -850,11 +850,6 @@
                 setInterval(() => {
                     supabaseClient.channel('keepalive').send({ type: 'ping' });
                 }, 50000);
-            }
-
-            async function handleNewOrder(newOrderData) {
-                try {
-                    // Check if the new order is within current date range
                     const dateRange = getDateRangeFilter();
                     const orderDate = new Date(newOrderData.created_at);
                     const startDate = new Date(dateRange.start);

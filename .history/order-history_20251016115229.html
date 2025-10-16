@@ -408,11 +408,6 @@
             setInterval(() => {
                 supabaseClient.channel('keepalive').send({ type: 'ping' });
             }, 50000);
-        }
-
-        // Display orders in the container
-        function displayOrders(orders) {
-            ordersContainer.innerHTML = '';
             
             orders.forEach(order => {
                 const orderCard = createOrderCard(order);
