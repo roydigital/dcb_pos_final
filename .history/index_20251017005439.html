@@ -386,8 +386,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="razorpay-checkout.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="frontend/razorpay-checkout.js"></script>
     <script>
         // Function to request location permission
         async function requestLocationPermission() {
@@ -995,7 +995,7 @@
                 }
             }
 
-            window.createOrderInSupabase = async (paymentMode, transactionId = null, status = null) => {
+            window.createOrderInSupabase = async (paymentMode, transactionId = null) => {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) {
                     alert("Session expired. Please log in again.");
@@ -1036,7 +1036,7 @@
                     const finalNote = transactionId ? `Razorpay TXN ID: ${transactionId}. ${note || ''}`.trim() : note;
 
                     // For UPI payments, set status to 'Accepted' since payment is already verified
-                    const orderStatus = status || (paymentMode === 'UPI' ? 'Accepted' : 'Pending');
+                    const orderStatus = paymentMode === 'UPI' ? 'Accepted' : 'Pending';
 
                     const { data: orderData, error: orderError } = await supabaseClient
                         .from('orders')
@@ -1130,21 +1130,6 @@
                         lucide.createIcons();
                     }
                 }
-            }
-            
-            // Session Management
-            const authContainer = document.getElementById('auth-container');
-
-            async function setupAuthUI(session) {
-                if (session) {
-                    // User is logged in - get profile data to display name
-                    const { data: profile, error } = await supabaseClient
-                        .from('profiles')
-                        .select('first_name, last_name')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    let displayName = session.user.email;
                     if (profile && profile.first_name) {
                         displayName = `${profile.first_name} ${profile.last_name || ''}`.trim();
                     } else if (session.user.user_metadata && session.user.user_metadata.first_name) {
@@ -1504,5 +1489,7 @@
             }
         });
     </script>
+    <script src="razorpay-checkout.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>

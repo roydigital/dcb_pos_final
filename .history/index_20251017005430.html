@@ -386,8 +386,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="razorpay-checkout.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="frontend/razorpay-checkout.js"></script>
     <script>
         // Function to request location permission
         async function requestLocationPermission() {
@@ -995,7 +995,7 @@
                 }
             }
 
-            window.createOrderInSupabase = async (paymentMode, transactionId = null, status = null) => {
+            window.createOrderInSupabase = async (paymentMode, transactionId = null) => {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) {
                     alert("Session expired. Please log in again.");
@@ -1036,7 +1036,7 @@
                     const finalNote = transactionId ? `Razorpay TXN ID: ${transactionId}. ${note || ''}`.trim() : note;
 
                     // For UPI payments, set status to 'Accepted' since payment is already verified
-                    const orderStatus = status || (paymentMode === 'UPI' ? 'Accepted' : 'Pending');
+                    const orderStatus = paymentMode === 'UPI' ? 'Accepted' : 'Pending';
 
                     const { data: orderData, error: orderError } = await supabaseClient
                         .from('orders')
@@ -1098,21 +1098,6 @@
                 if (paymentMode === "UPI") {
                     // For UPI payments, trigger Razorpay checkout flow
                     checkoutBtn.disabled = true;
-                    checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
-                    
-                    try {
-                        await triggerRazorpayCheckout();
-                    } catch (error) {
-                        console.error('Error in Razorpay checkout:', error);
-                        alert('Error starting payment process. Please try again.');
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerHTML = `
-                            <i data-lucide="lock" class="h-5 w-5"></i>
-                            Proceed to Checkout
-                        `;
-                        lucide.createIcons();
-                    }
-                } else { // Handle Cash orders
                     checkoutBtn.disabled = true;
                     checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
 
@@ -1504,5 +1489,7 @@
             }
         });
     </script>
+    <script src="razorpay-checkout.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>

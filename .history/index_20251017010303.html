@@ -1036,7 +1036,7 @@
                     const finalNote = transactionId ? `Razorpay TXN ID: ${transactionId}. ${note || ''}`.trim() : note;
 
                     // For UPI payments, set status to 'Accepted' since payment is already verified
-                    const orderStatus = status || (paymentMode === 'UPI' ? 'Accepted' : 'Pending');
+                    const orderStatus = paymentMode === 'UPI' ? 'Accepted' : 'Pending';
 
                     const { data: orderData, error: orderError } = await supabaseClient
                         .from('orders')
