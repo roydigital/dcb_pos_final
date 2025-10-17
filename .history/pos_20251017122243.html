@@ -2019,16 +2019,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </svg>
                         <p class="text-lg mb-2">No coupons found</p>
                         <p class="text-sm mb-4">Create your first coupon to get started!</p>
-                        <button id="create-first-coupon-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Create First Coupon</button>
-                    </div>
-                `;
-                document.getElementById('create-first-coupon-btn').addEventListener('click', () => openCouponEditModal());
-                return;
-            }
-
-            coupons.forEach(coupon => {
-                const couponDiv = document.createElement('div');
-                couponDiv.className = 'bg-white border rounded-lg p-4 shadow-sm';
                 
                 const discountText = coupon.discount_type === 'percentage' 
                     ? `${coupon.discount_value}% off` 

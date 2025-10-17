@@ -2024,16 +2024,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 document.getElementById('create-first-coupon-btn').addEventListener('click', () => openCouponEditModal());
                 return;
-            }
-
-            coupons.forEach(coupon => {
-                const couponDiv = document.createElement('div');
-                couponDiv.className = 'bg-white border rounded-lg p-4 shadow-sm';
-                
-                const discountText = coupon.discount_type === 'percentage' 
-                    ? `${coupon.discount_value}% off` 
-                    : `₹${coupon.discount_value} off`;
-                
                 const usageText = coupon.usage_limit 
                     ? `${coupon.used_count}/${coupon.usage_limit} used` 
                     : `${coupon.used_count} used`;
