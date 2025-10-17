@@ -43,7 +43,7 @@ async function triggerRazorpayCheckout() {
             order_id: orderData.orderId,
             handler: async function (response) {
                 // 2. Verify the payment on your backend
-                const verificationResponse = await fetch("https://dcbchicken.com:8081/verify-payment", {
+                const verificationResponse = await fetch("https://dcb-pos-final.onrender.com/verify-payment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(response),

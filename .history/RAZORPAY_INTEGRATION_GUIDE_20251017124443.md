@@ -133,7 +133,7 @@ curl -X POST https://dcbchicken.com:8081/create-order \
 
 ## Deployment Notes
 
-- Backend deployed on VPS (dcbchicken.com:8081)
+- Backend deployed on Render.com
 - Frontend served from dcbchicken.com
 - Uses production Razorpay keys
 - SSL certificates properly configured
