@@ -1130,22 +1130,6 @@
                     }
                 } else { // Handle Cash orders
                     checkoutBtn.disabled = true;
-                    checkoutBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
-
-                    const orderData = await window.createOrderInSupabase('Cash');
-
-                    if (orderData) {
-                        window.location.href = `order-status.html?order_id=${orderData.id}`;
-                    } else {
-                        // Re-enable button on failure
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerHTML = `
-                            <i data-lucide="lock" class="h-5 w-5"></i>
-                            Proceed to Checkout
-                        `;
-                        lucide.createIcons();
-                    }
-                }
             }
             
             // Session Management

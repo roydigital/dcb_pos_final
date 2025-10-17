@@ -1146,22 +1146,6 @@
                         lucide.createIcons();
                     }
                 }
-            }
-            
-            // Session Management
-            const authContainer = document.getElementById('auth-container');
-
-            async function setupAuthUI(session) {
-                if (session) {
-                    // User is logged in - get profile data to display name
-                    const { data: profile, error } = await supabaseClient
-                        .from('profiles')
-                        .select('first_name, last_name')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    let displayName = session.user.email;
-                    if (profile && profile.first_name) {
                         displayName = `${profile.first_name} ${profile.last_name || ''}`.trim();
                     } else if (session.user.user_metadata && session.user.user_metadata.first_name) {
                         displayName = `${session.user.user_metadata.first_name} ${session.user.user_metadata.last_name || ''}`.trim();
