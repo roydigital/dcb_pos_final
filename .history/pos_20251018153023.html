@@ -709,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const fileName = `${Date.now()}-${file.name}`;
             const { data, error } = await supabaseClient.storage
-                .from('menu-images') // Using a dedicated bucket for menu images
+                .from('MENU-IMAGES') // Using a dedicated bucket for menu images
                 .upload(fileName, file, {
                     cacheControl: '3600',
                     upsert: false
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Get public URL
             const { data: { publicUrl } } = supabaseClient.storage
-                .from('menu-images')
+                .from('MENU-IMAGES')
                 .getPublicUrl(fileName);
 
             if (!publicUrl) {

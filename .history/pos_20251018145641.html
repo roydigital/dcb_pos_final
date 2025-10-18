@@ -684,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadImageBtn.addEventListener('click', handleImageUpload);
 
     async function handleImageUpload() {
+        alert('Upload button clicked!');
         const file = itemImageInput.files[0];
         if (!file) {
             showUploadMessage('Please select an image file first.', 'error');
@@ -763,7 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadMessage.classList.add('hidden');
         }, 5000);
     }
-
 
     // Inventory Management Elements
     const openInventoryBtn = document.getElementById('open-inventory-btn');
@@ -966,9 +966,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (item.in_stock) {
                         // In Stock - Normal styling
-                        button.className = 'bg-white p-3 rounded-lg shadow hover:shadow-lg hover:bg-blue-50 transition-all text-left flex flex-col';
+                        button.className = 'bg-white p-3 rounded-lg shadow hover:shadow-lg hover:bg-blue-50 transition-all text-left';
                         button.innerHTML = `
-                            <img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/ffffff?text=No+Image'}" alt="${item.name}" class="w-full h-24 object-cover rounded-md mb-2">
                             <p class="font-semibold text-gray-800">${item.name}</p>
                             <p class="text-sm text-gray-500">${formatVariant(variant)}</p>
                             <p class="text-lg font-bold mt-2 text-blue-600">₹${price.toFixed(2)}</p>
@@ -976,9 +975,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         button.addEventListener('click', () => addItemToOrder(item.name, variant, price));
                     } else {
                         // Out of Stock - Red styling and disabled
-                        button.className = 'bg-red-50 p-3 rounded-lg shadow text-left cursor-not-allowed opacity-70 flex flex-col';
+                        button.className = 'bg-red-50 p-3 rounded-lg shadow text-left cursor-not-allowed opacity-70';
                         button.innerHTML = `
-                            <img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/ffffff?text=No+Image'}" alt="${item.name}" class="w-full h-24 object-cover rounded-md mb-2">
                             <p class="font-semibold text-red-800">${item.name}</p>
                             <p class="text-sm text-red-500">${formatVariant(variant)}</p>
                             <p class="text-lg font-bold mt-2 text-red-600">₹${price.toFixed(2)}</p>
@@ -1521,10 +1519,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemImageUrl.value = item.imageUrl; // Set the image URL in the hidden input
                 itemImagePreview.src = item.imageUrl;
                 itemImagePreview.classList.remove('hidden');
-            } else {
-                // If no image URL, ensure the preview is hidden
-                itemImagePreview.classList.add('hidden');
-                itemImagePreview.src = '';
             }
 
             for(const variant in item.prices) {
@@ -2318,7 +2312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valid_until: new Date(document.getElementById('valid-until').value).toISOString(),
                 is_active: document.getElementById('is-active').checked,
                 first_time_customer_only: document.getElementById('first-time-customer-only').checked,
-                'single_use_per_customer': document.getElementById('single-use-per-customer').checked,
+                single_use_per_customer: document.getElementById('single-use-per-customer').checked,
             };
 
             // Get selected categories

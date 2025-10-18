@@ -348,7 +348,7 @@
                     <label for="item-image-upload" class="block text-sm font-medium text-gray-700">Item Image</label>
                     <div class="flex gap-2">
                         <input type="file" id="item-image-upload" accept="image/*" class="mt-1 flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
-                        <button type="button" id="upload-image-btn" class="mt-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Upload</button>
+                        <button type="button" id="upload-image-btn" onclick="handleImageUpload()" class="mt-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Upload</button>
                     </div>
                     <input type="hidden" id="item-image-url">
                     <div id="upload-progress" class="hidden mt-2">
@@ -681,10 +681,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemImageUrl = document.getElementById('item-image-url');
 
     // --- File Upload Functionality ---
-    uploadImageBtn.addEventListener('click', handleImageUpload);
-
     async function handleImageUpload() {
-        const file = itemImageInput.files[0];
+        const file = itemImageUpload.files[0];
         if (!file) {
             showUploadMessage('Please select an image file first.', 'error');
             return;
@@ -966,9 +964,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (item.in_stock) {
                         // In Stock - Normal styling
-                        button.className = 'bg-white p-3 rounded-lg shadow hover:shadow-lg hover:bg-blue-50 transition-all text-left flex flex-col';
+                        button.className = 'bg-white p-3 rounded-lg shadow hover:shadow-lg hover:bg-blue-50 transition-all text-left';
                         button.innerHTML = `
-                            <img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/ffffff?text=No+Image'}" alt="${item.name}" class="w-full h-24 object-cover rounded-md mb-2">
                             <p class="font-semibold text-gray-800">${item.name}</p>
                             <p class="text-sm text-gray-500">${formatVariant(variant)}</p>
                             <p class="text-lg font-bold mt-2 text-blue-600">₹${price.toFixed(2)}</p>
@@ -976,9 +973,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         button.addEventListener('click', () => addItemToOrder(item.name, variant, price));
                     } else {
                         // Out of Stock - Red styling and disabled
-                        button.className = 'bg-red-50 p-3 rounded-lg shadow text-left cursor-not-allowed opacity-70 flex flex-col';
+                        button.className = 'bg-red-50 p-3 rounded-lg shadow text-left cursor-not-allowed opacity-70';
                         button.innerHTML = `
-                            <img src="${item.imageUrl || 'https://placehold.co/100x100/cccccc/ffffff?text=No+Image'}" alt="${item.name}" class="w-full h-24 object-cover rounded-md mb-2">
                             <p class="font-semibold text-red-800">${item.name}</p>
                             <p class="text-sm text-red-500">${formatVariant(variant)}</p>
                             <p class="text-lg font-bold mt-2 text-red-600">₹${price.toFixed(2)}</p>
@@ -1521,10 +1517,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemImageUrl.value = item.imageUrl; // Set the image URL in the hidden input
                 itemImagePreview.src = item.imageUrl;
                 itemImagePreview.classList.remove('hidden');
-            } else {
-                // If no image URL, ensure the preview is hidden
-                itemImagePreview.classList.add('hidden');
-                itemImagePreview.src = '';
             }
 
             for(const variant in item.prices) {
@@ -2318,7 +2310,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valid_until: new Date(document.getElementById('valid-until').value).toISOString(),
                 is_active: document.getElementById('is-active').checked,
                 first_time_customer_only: document.getElementById('first-time-customer-only').checked,
-                'single_use_per_customer': document.getElementById('single-use-per-customer').checked,
+                single_use_per_customer: document.getElementById('single-use-per-customer').checked,
             };
 
             // Get selected categories
