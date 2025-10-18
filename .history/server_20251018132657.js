@@ -141,4 +141,3 @@ app.post("/api/upload-image", upload.single('image'), async (req, res) => {
 // Serve uploaded images statically
 app.use('/uploads', express.static(uploadsDir));
 
-app.listen(8081, () => console.log("✅ DCB Razorpay Server running on port 8081"));

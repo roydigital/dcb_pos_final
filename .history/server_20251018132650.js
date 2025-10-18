@@ -118,27 +118,3 @@ app.get("/api/coupons", async (req, res) => {
 app.post("/api/upload-image", upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    // Generate the URL for the uploaded file
-    // In production, this would be your VPS domain
-    const baseUrl = process.env.VPS_BASE_URL || `http://localhost:8081`;
-    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      imageUrl: imageUrl,
-      filename: req.file.filename,
-      message: "Image uploaded successfully"
-    });
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({ error: "Failed to upload image" });
-  }
-});
-
-// Serve uploaded images statically
-app.use('/uploads', express.static(uploadsDir));
-
-app.listen(8081, () => console.log("✅ DCB Razorpay Server running on port 8081"));

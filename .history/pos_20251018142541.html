@@ -1581,6 +1581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addPriceVariantInput(); // Add one empty variant field to start
         }
         itemEditModal.classList.remove('hidden');
+        itemEditModal.classList.remove('hidden');
     }
     function addPriceVariantInput(variant = '', price = '') {
         const div = document.createElement('div');
@@ -1589,6 +1590,8 @@ document.addEventListener('DOMContentLoaded', () => {
         priceVariantsContainer.appendChild(div);
         div.querySelector('.remove-variant-btn').addEventListener('click', () => div.remove());
     }
+    // (Re-pasting the full menu management functions)
+
     async function handleDeleteItemClick(e) {
         const itemId = e.currentTarget.dataset.id;
         const name = e.currentTarget.dataset.name;
@@ -1609,6 +1612,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Failed to delete item: ${error.message}`);
             }
         }
+    }
+    function openItemEditModal(item = null, category = '') {
+        itemEditForm.reset();
+        priceVariantsContainer.innerHTML = '';
+        itemImagePreview.classList.add('hidden');
+        itemImagePreview.src = '';
+        itemImageInput.value = ''; // Clear file input
+
+        if (item) {
+            itemModalTitle.textContent = 'Edit Menu Item';
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = category;
+            document.getElementById('item-description').value = item.description || '';
+            // Use a hidden input to store the item ID for updates
+            document.getElementById('original-item-name').value = item.id; 
+            
+            if (item.imageUrl) {
+                itemImageInput.value = item.imageUrl; // Set the image URL in the input field
+                itemImagePreview.src = item.imageUrl;
+                itemImagePreview.classList.remove('hidden');
+            }
+
+            for(const variant in item.prices) {
+                addPriceVariantInput(variant, item.prices[variant]);
+            }
+        } else {
+            itemModalTitle.textContent = 'Add New Item';
+            document.getElementById('original-item-name').value = ''; // Clear ID
+            addPriceVariantInput(); // Add one empty variant field to start
+        }
+        itemEditModal.classList.remove('hidden');
+    }
+    function addPriceVariantInput(variant = '', price = '') {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `<input type="text" placeholder="Variant (e.g., Half)" value="${variant}" class="variant-name mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required><input type="number" placeholder="Price" value="${price}" class="variant-price mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required min="0" step="0.01"><button type="button" class="remove-variant-btn text-red-500 p-2 text-2xl">&times;</button>`;
+        priceVariantsContainer.appendChild(div);
+        div.querySelector('.remove-variant-btn').addEventListener('click', () => div.remove());
     }
     addPriceVariantBtn.addEventListener('click', () => addPriceVariantInput());
 
@@ -1650,7 +1691,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Object.keys(prices).length === 0) throw new Error("Please add at least one valid price variant.");
 
             // 1. Handle Image URL
-            const imageUrl = itemImageUrl.value.trim() || null;
+            const imageUrl = itemImageInput.value.trim() || null;
 
             // 2. Upsert Item with prices in JSONB column
             const itemData = {

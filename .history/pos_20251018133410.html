@@ -671,8 +671,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemModalTitle = document.getElementById('item-modal-title');
     const priceVariantsContainer = document.getElementById('price-variants-container');
     const addPriceVariantBtn = document.getElementById('add-price-variant-btn');
-    const itemImageInput = document.getElementById('item-image-upload');
+    const itemImageInput = document.getElementById('item-image');
     const itemImagePreview = document.getElementById('item-image-preview');
+    const itemImageUpload = document.getElementById('item-image-upload');
     const uploadImageBtn = document.getElementById('upload-image-btn');
     const uploadProgress = document.getElementById('upload-progress');
     const uploadProgressBar = document.getElementById('upload-progress-bar');
@@ -729,6 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success && result.imageUrl) {
                 // Set the uploaded image URL
                 itemImageUrl.value = result.imageUrl;
+                itemImageInput.value = result.imageUrl;
                 itemImagePreview.src = result.imageUrl;
                 itemImagePreview.classList.remove('hidden');
                 
@@ -784,6 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     const demoUrl = 'https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=Uploaded+Image';
                     itemImageUrl.value = demoUrl;
+                    itemImageInput.value = demoUrl;
                     itemImagePreview.src = demoUrl;
                     itemImagePreview.classList.remove('hidden');
                     
@@ -816,144 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Inventory Management Elements
-    const openInventoryBtn = document.getElementById('open-inventory-btn');
-    const inventoryModal = document.getElementById('inventory-modal');
-    const closeInventoryBtn = document.getElementById('close-inventory-btn');
-    const inventoryListContainer = document.getElementById('inventory-list-container');
-    const addNewIngredientBtn = document.getElementById('add-new-ingredient-btn');
-    const ingredientEditModal = document.getElementById('ingredient-edit-modal');
-    const ingredientEditForm = document.getElementById('ingredient-edit-form');
-    const ingredientModalTitle = document.getElementById('ingredient-modal-title');
-    const cancelIngredientEditBtn = document.getElementById('cancel-ingredient-edit-btn');
-    
-    // Recipe Builder Elements
-    const recipeModal = document.getElementById('recipe-modal');
-    const closeRecipeModalBtn = document.getElementById('close-recipe-modal-btn');
-    const saveRecipeBtn = document.getElementById('save-recipe-btn');
-    const recipeItemName = document.getElementById('recipe-item-name');
-    const recipeVariantsContainer = document.getElementById('recipe-variants-container');
-
-
-    // --- Data Persistence (Supabase) ---
-    async function loadDataFromSupabase() {
-        await fetchMenuFromSupabase();
-        await fetchInventoryFromSupabase();
-    }
-
-    async function fetchInventoryFromSupabase() {
-        try {
-            const { data, error } = await supabaseClient
-                .from('inventory')
-                .select('*')
-                .order('name', { ascending: true });
-
-            if (error) throw error;
-
-            if (data && data.length > 0) {
-                inventory = data;
-                console.log(`Loaded ${inventory.length} inventory items from Supabase`);
-            } else {
-                // If no inventory in Supabase, use default and save to Supabase
-                inventory = JSON.parse(JSON.stringify(defaultInventory));
-                await saveInventoryToSupabase();
-            }
-        } catch (err) {
-            console.error("Error fetching inventory:", err);
-            alert("Could not load inventory from the database. Using local storage.");
-            const savedInventory = localStorage.getItem('dcbInventory');
-            inventory = savedInventory ? JSON.parse(savedInventory) : JSON.parse(JSON.stringify(defaultInventory));
-        }
-    }
-
-    async function saveInventoryToSupabase() {
-        try {
-            // Clear existing inventory and insert new
-            const { error: deleteError } = await supabaseClient
-                .from('inventory')
-                .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
-
-            if (deleteError) throw deleteError;
-
-            // Insert current inventory
-            const { error: insertError } = await supabaseClient
-                .from('inventory')
-                .insert(inventory);
-
-            if (insertError) throw insertError;
-            
-            console.log('Inventory saved to Supabase');
-        } catch (error) {
-            console.error('Error saving inventory to Supabase:', error);
-            // Fallback to localStorage
-            localStorage.setItem('dcbInventory', JSON.stringify(inventory));
-        }
-    }
-
-    function saveInventoryToStorage() {
-        localStorage.setItem('dcbInventory', JSON.stringify(inventory));
-    }
-
-    async function updateInventoryInSupabase() {
-        try {
-            // Update each inventory item individually
-            for (const item of inventory) {
-                if (item.id) {
-                    // Update existing item
-                    const { error } = await supabaseClient
-                        .from('inventory')
-                        .update({ stock: item.stock })
-                        .eq('id', item.id);
-                    
-                    if (error) throw error;
-                } else {
-                    // Insert new item
-                    const { error } = await supabaseClient
-                        .from('inventory')
-                        .insert({
-                            name: item.name,
-                            stock: item.stock,
-                            unit: item.unit,
-                            minimum_stock: item.minimum_stock || 0,
-                            cost_per_unit: item.cost_per_unit || 0,
-                            supplier_info: item.supplier_info || ''
-                        });
-                    
-                    if (error) throw error;
-                }
-            }
-        } catch (error) {
-            console.error('Error updating inventory in Supabase:', error);
-            // Fallback to localStorage
-            saveInventoryToStorage();
-        }
-    }
-
-    async function fetchMenuFromSupabase() {
-        try {
-            const { data, error } = await supabaseClient
-                .from('menu_items')
-                .select(`
-                    id,
-                    name,
-                    category,
-                    prices,
-                    recipe,
-                    image_url,
-                    description,
-                    in_stock
-                `)
-                .order('name', { ascending: true });
-
-            if (error) throw error;
-
-            // Reset and process data
-            menu = {};
-            allCategories = [];
-            const categorySet = new Set();
-
-            data.forEach(item => {
                 if (!menu[item.category]) {
                     menu[item.category] = [];
                 }
@@ -1537,58 +1402,18 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.checked = !isInStock;
         }
     }
+    function handleEditItemClick(e) { /* ... */ }
+    function handleDeleteItemClick(e) { /* ... */ }
+    function openItemEditModal(item, category) { /* ... */ }
+    function addPriceVariantInput(variant, price) { /* ... */ }
+    // (Re-pasting the full menu management functions)
     function handleEditItemClick(e) {
-        console.log('Edit button clicked', e.currentTarget.dataset);
         const itemId = e.currentTarget.dataset.id;
         const category = e.currentTarget.dataset.category;
         const item = menu[category].find(i => i.id == itemId);
-        console.log('Found item:', item);
-        if (item) {
-            openItemEditModal(item, category);
-        } else {
-            console.error('Item not found:', { itemId, category, menu });
-        }
+        openItemEditModal(item, category);
     }
 
-    function openItemEditModal(item = null, category = '') {
-        itemEditForm.reset();
-        priceVariantsContainer.innerHTML = '';
-        itemImagePreview.classList.add('hidden');
-        itemImagePreview.src = '';
-        itemImageInput.value = ''; // Clear file input
-        itemImageUrl.value = ''; // Clear hidden image URL input
-
-        if (item) {
-            itemModalTitle.textContent = 'Edit Menu Item';
-            document.getElementById('item-name').value = item.name;
-            document.getElementById('item-category').value = category;
-            document.getElementById('item-description').value = item.description || '';
-            // Use a hidden input to store the item ID for updates
-            document.getElementById('original-item-name').value = item.id; 
-            
-            if (item.imageUrl) {
-                itemImageUrl.value = item.imageUrl; // Set the image URL in the hidden input
-                itemImagePreview.src = item.imageUrl;
-                itemImagePreview.classList.remove('hidden');
-            }
-
-            for(const variant in item.prices) {
-                addPriceVariantInput(variant, item.prices[variant]);
-            }
-        } else {
-            itemModalTitle.textContent = 'Add New Item';
-            document.getElementById('original-item-name').value = ''; // Clear ID
-            addPriceVariantInput(); // Add one empty variant field to start
-        }
-        itemEditModal.classList.remove('hidden');
-    }
-    function addPriceVariantInput(variant = '', price = '') {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-2';
-        div.innerHTML = `<input type="text" placeholder="Variant (e.g., Half)" value="${variant}" class="variant-name mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required><input type="number" placeholder="Price" value="${price}" class="variant-price mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required min="0" step="0.01"><button type="button" class="remove-variant-btn text-red-500 p-2 text-2xl">&times;</button>`;
-        priceVariantsContainer.appendChild(div);
-        div.querySelector('.remove-variant-btn').addEventListener('click', () => div.remove());
-    }
     async function handleDeleteItemClick(e) {
         const itemId = e.currentTarget.dataset.id;
         const name = e.currentTarget.dataset.name;
@@ -1609,6 +1434,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Failed to delete item: ${error.message}`);
             }
         }
+    }
+    function openItemEditModal(item = null, category = '') {
+        itemEditForm.reset();
+        priceVariantsContainer.innerHTML = '';
+        itemImagePreview.classList.add('hidden');
+        itemImagePreview.src = '';
+        itemImageInput.value = ''; // Clear file input
+
+        if (item) {
+            itemModalTitle.textContent = 'Edit Menu Item';
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = category;
+            document.getElementById('item-description').value = item.description || '';
+            // Use a hidden input to store the item ID for updates
+            document.getElementById('original-item-name').value = item.id; 
+            
+            if (item.imageUrl) {
+                itemImageInput.value = item.imageUrl; // Set the image URL in the input field
+                itemImagePreview.src = item.imageUrl;
+                itemImagePreview.classList.remove('hidden');
+            }
+
+            for(const variant in item.prices) {
+                addPriceVariantInput(variant, item.prices[variant]);
+            }
+        } else {
+            itemModalTitle.textContent = 'Add New Item';
+            document.getElementById('original-item-name').value = ''; // Clear ID
+            addPriceVariantInput(); // Add one empty variant field to start
+        }
+        itemEditModal.classList.remove('hidden');
+    }
+    function addPriceVariantInput(variant = '', price = '') {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `<input type="text" placeholder="Variant (e.g., Half)" value="${variant}" class="variant-name mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required><input type="number" placeholder="Price" value="${price}" class="variant-price mt-1 w-full border border-gray-300 rounded-md py-2 px-3" required min="0" step="0.01"><button type="button" class="remove-variant-btn text-red-500 p-2 text-2xl">&times;</button>`;
+        priceVariantsContainer.appendChild(div);
+        div.querySelector('.remove-variant-btn').addEventListener('click', () => div.remove());
     }
     addPriceVariantBtn.addEventListener('click', () => addPriceVariantInput());
 
@@ -1650,7 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Object.keys(prices).length === 0) throw new Error("Please add at least one valid price variant.");
 
             // 1. Handle Image URL
-            const imageUrl = itemImageUrl.value.trim() || null;
+            const imageUrl = itemImageInput.value.trim() || null;
 
             // 2. Upsert Item with prices in JSONB column
             const itemData = {
@@ -2602,22 +2465,6 @@ document.addEventListener('DOMContentLoaded', () => {
         originalClearOrder();
         handleRemoveCoupon();
     }
-
-    // --- Event Listeners for Management Buttons ---
-    openMenuManagementBtn.addEventListener('click', () => { 
-        renderMenuManagementList(); 
-        menuManagementModal.classList.remove('hidden'); 
-    });
-    
-    openInventoryBtn.addEventListener('click', () => { 
-        renderInventoryList(); 
-        inventoryModal.classList.remove('hidden'); 
-    });
-    
-    openCouponsBtn.addEventListener('click', () => {
-        renderCouponManagementList();
-        couponManagementModal.classList.remove('hidden');
-    });
 
     // --- Initial calls ---
     loadDataFromSupabase();
