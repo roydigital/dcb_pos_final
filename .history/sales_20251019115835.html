@@ -87,7 +87,7 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow-sm border p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -126,6 +126,48 @@
                     <div class="ml-3">
                         <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
                         <p id="avg-order-value" class="text-xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-orange-600">📊</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Items Sold</p>
+                        <p id="total-items" class="text-xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <span class="text-red-600">💸</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Total Profit</p>
+                        <p id="total-profit" class="text-xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <span class="text-yellow-600">📈</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Profit Margin</p>
+                        <p id="profit-margin" class="text-xl font-bold text-gray-900">0%</p>
                     </div>
                 </div>
             </div>
@@ -213,25 +255,6 @@
         </div>
     </main>
 
-    <!-- Order Details Modal -->
-    <div id="order-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-semibold text-gray-900">Order Details</h3>
-                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div id="order-details-content">
-                    <!-- Order details will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl">
@@ -295,21 +318,6 @@
 
             applyFilterBtn.addEventListener('click', applyFilters);
             exportBtn.addEventListener('click', exportReport);
-            
-            // Modal close functionality
-            const closeModalBtn = document.getElementById('close-modal');
-            const orderDetailsModal = document.getElementById('order-details-modal');
-            
-            closeModalBtn.addEventListener('click', () => {
-                orderDetailsModal.classList.add('hidden');
-            });
-            
-            // Close modal when clicking outside
-            orderDetailsModal.addEventListener('click', (e) => {
-                if (e.target === orderDetailsModal) {
-                    orderDetailsModal.classList.add('hidden');
-                }
-            });
         }
 
         function showLoading() {
@@ -452,10 +460,12 @@
             const totalSales = filteredOrders.reduce((sum, order) => sum + order.grand_total, 0);
             const totalOrders = filteredOrders.length;
             const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+            const totalItems = filteredOrderItems.reduce((sum, item) => sum + item.quantity, 0);
             
             document.getElementById('total-sales').textContent = `₹${totalSales.toLocaleString('en-IN')}`;
             document.getElementById('total-orders').textContent = totalOrders.toLocaleString('en-IN');
             document.getElementById('avg-order-value').textContent = `₹${avgOrderValue.toFixed(2)}`;
+            document.getElementById('total-items').textContent = totalItems.toLocaleString('en-IN');
         }
 
         function updateCharts() {
@@ -609,48 +619,6 @@
             });
         }
 
-        function updateProductSalesTable() {
-            const tbody = document.getElementById('product-sales-table-body');
-            tbody.innerHTML = '';
-            
-            // Group items by product and variant
-            const productStats = {};
-            filteredOrderItems.forEach(item => {
-                const key = `${item.item_name}|${item.variant}`;
-                if (!productStats[key]) {
-                    productStats[key] = {
-                        item_name: item.item_name,
-                        variant: item.variant,
-                        quantity: 0,
-                        revenue: 0
-                    };
-                }
-                productStats[key].quantity += item.quantity;
-                productStats[key].revenue += item.quantity * item.price_per_unit;
-            });
-            
-            // Calculate total revenue for percentage calculation
-            const totalRevenue = Object.values(productStats).reduce((sum, product) => sum + product.revenue, 0);
-            
-            // Convert to array and sort by revenue
-            const allProducts = Object.values(productStats)
-                .sort((a, b) => b.revenue - a.revenue);
-            
-            allProducts.forEach(product => {
-                const percentage = totalRevenue > 0 ? (product.revenue / totalRevenue * 100) : 0;
-                const row = document.createElement('tr');
-                row.className = 'fade-in';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${product.item_name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.variant}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.quantity}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹${product.revenue.toLocaleString('en-IN')}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${percentage.toFixed(1)}%</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
         function updateOrdersTable() {
             const tbody = document.getElementById('orders-table-body');
             tbody.innerHTML = '';
@@ -662,8 +630,7 @@
                 ).join(', ');
                 
                 const row = document.createElement('tr');
-                row.className = 'fade-in cursor-pointer hover:bg-gray-50';
-                row.setAttribute('data-order-id', order.id);
+                row.className = 'fade-in';
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.id}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDateTime(order.created_at)}</td>
@@ -672,119 +639,8 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹${order.grand_total}</td>
                     <td class="px-6 py-4 text-sm text-gray-500">${order.note || '-'}</td>
                 `;
-                
-                // Add click event to show order details
-                row.addEventListener('click', () => {
-                    showOrderDetails(order.id);
-                });
-                
                 tbody.appendChild(row);
             });
-        }
-
-        function showOrderDetails(orderId) {
-            const order = filteredOrders.find(o => o.id === orderId);
-            if (!order) return;
-            
-            const orderItems = filteredOrderItems.filter(item => item.order_id === orderId);
-            
-            const modal = document.getElementById('order-details-modal');
-            const content = document.getElementById('order-details-content');
-            
-            // Build detailed order content
-            let orderDetailsHTML = `
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Order ID</p>
-                            <p class="text-lg font-semibold text-gray-900">${order.id}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Status</p>
-                            <p class="text-lg font-semibold ${getStatusColor(order.status || 'Unknown')}">${order.status || 'Unknown'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Date & Time</p>
-                            <p class="text-sm text-gray-900">${formatDateTime(order.created_at)}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Payment Mode</p>
-                            <p class="text-sm text-gray-900">${order.payment_mode}</p>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <p class="text-sm font-medium text-gray-600 mb-2">Order Items</p>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <table class="min-w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">Variant</th>
-                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                                        <th class="text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-            `;
-            
-            orderItems.forEach(item => {
-                const itemTotal = item.quantity * item.price_per_unit;
-                orderDetailsHTML += `
-                    <tr class="border-b border-gray-200">
-                        <td class="py-2 text-sm text-gray-900">${item.item_name}</td>
-                        <td class="py-2 text-sm text-gray-500">${item.variant}</td>
-                        <td class="py-2 text-sm text-gray-500">${item.quantity}</td>
-                        <td class="py-2 text-sm text-gray-500">₹${item.price_per_unit}</td>
-                        <td class="py-2 text-sm font-medium text-gray-900">₹${itemTotal}</td>
-                    </tr>
-                `;
-            });
-            
-            orderDetailsHTML += `
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Subtotal</p>
-                            <p class="text-lg font-semibold text-gray-900">₹${order.sub_total || order.grand_total}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Grand Total</p>
-                            <p class="text-lg font-semibold text-gray-900">₹${order.grand_total}</p>
-                        </div>
-                    </div>
-                    
-                    ${order.note ? `
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Notes</p>
-                        <p class="text-sm text-gray-900 bg-yellow-50 p-3 rounded-lg">${order.note}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            content.innerHTML = orderDetailsHTML;
-            modal.classList.remove('hidden');
-        }
-
-        function getStatusColor(status) {
-            const statusColors = {
-                'completed': 'text-green-600',
-                'delivered': 'text-green-600',
-                'pending': 'text-yellow-600',
-                'processing': 'text-blue-600',
-                'cancelled': 'text-red-600',
-                'declined': 'text-red-600'
-            };
-            return statusColors[status?.toLowerCase()] || 'text-gray-600';
         }
 
         function formatDateTime(dateTimeStr) {

@@ -12,8 +12,51 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f9fafb;
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #f3f4f6;
+        }
+        :root {
+            --brand-blue: #3b82f6;
+            --brand-blue-dark: #2563eb;
+            --brand-blue-light: #dbeafe;
+            --brand-green: #16a34a;
+            --brand-green-dark: #15803d;
+            --brand-green-light: #dcfce7;
+            --brand-dark: #1f2937;
+            --brand-light: #f9fafb;
+        }
+        .bg-brand-blue { background-color: var(--brand-blue); }
+        .text-brand-blue { color: var(--brand-blue); }
+        .border-brand-blue { border-color: var(--brand-blue); }
+        .bg-brand-green { background-color: var(--brand-green); }
+        .text-brand-green { color: var(--brand-green); }
+        .border-brand-green { border-color: var(--brand-green); }
+        .bg-brand-dark { background-color: var(--brand-dark); }
+        .text-brand-dark { color: var(--brand-dark); }
+        .bg-brand-light { background-color: var(--brand-light); }
+        .text-brand-light { color: var(--brand-light); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-blue);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--brand-blue-dark);
+        }
+        
+        .customer-card {
+            transition: all 0.3s ease;
+        }
+        .customer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
         
         .fade-in {
@@ -28,14 +71,6 @@
         .loading {
             opacity: 0.6;
             pointer-events: none;
-        }
-        
-        .customer-card {
-            transition: all 0.3s ease;
-        }
-        .customer-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
         
         /* Badge styles */
@@ -64,25 +99,26 @@
 </head>
 <body class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Customer Insights</h1>
-                    <p class="text-gray-600">Delhi Chicken Brothers - Customer Analytics</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='pos.html'" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                        Back to POS
-                    </button>
-                    <div id="auth-container"></div>
-                </div>
+    <header class="bg-white sticky top-0 z-40 shadow-md border-b border-gray-200">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2">
+                <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12 md:h-14 md:w-14">
+                <span class="text-xl md:text-2xl font-bold text-brand-dark hidden sm:block">Delhi Chicken Brothers</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="text-sm font-medium hover:text-brand-blue transition-colors">← Back to Home</a>
+                <div id="auth-container"></div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="container mx-auto px-4 pt-20 pb-8 flex-grow">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-brand-dark mb-2">Customer Insights</h1>
+            <p class="text-gray-600">Deep analytics and insights about your customers</p>
+        </div>
 
         <!-- Quick Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -90,7 +126,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Total Customers</p>
-                        <p id="total-customers" class="text-2xl font-bold text-gray-900">0</p>
+                        <p id="total-customers" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <i data-lucide="users" class="h-6 w-6 text-blue-600"></i>
@@ -102,7 +138,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Active Customers</p>
-                        <p id="active-customers" class="text-2xl font-bold text-gray-900">0</p>
+                        <p id="active-customers" class="text-2xl font-bold text-brand-dark">0</p>
                     </div>
                     <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                         <i data-lucide="user-check" class="h-6 w-6 text-green-600"></i>
@@ -114,7 +150,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
-                        <p id="avg-order-value" class="text-2xl font-bold text-gray-900">₹0</p>
+                        <p id="avg-order-value" class="text-2xl font-bold text-brand-dark">₹0</p>
                     </div>
                     <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                         <i data-lucide="trending-up" class="h-6 w-6 text-purple-600"></i>
@@ -126,7 +162,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Customer Retention</p>
-                        <p id="retention-rate" class="text-2xl font-bold text-gray-900">0%</p>
+                        <p id="retention-rate" class="text-2xl font-bold text-brand-dark">0%</p>
                     </div>
                     <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                         <i data-lucide="repeat" class="h-6 w-6 text-orange-600"></i>
@@ -140,20 +176,20 @@
             <div class="flex flex-wrap gap-4 items-end">
                 <div class="flex-1 min-w-[300px]">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
-                        <input type="text" id="search-input" placeholder="Search by name, email, or phone..." 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <input type="text" id="search-input" placeholder="Search by name, email, or phone..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Filter by City</label>
-                    <select id="city-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select id="city-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue">
                         <option value="">All Cities</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
-                    <select id="type-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select id="type-filter" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue">
                         <option value="">All Types</option>
                         <option value="new">New Customers</option>
                         <option value="returning">Returning Customers</option>
@@ -173,7 +209,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Top Customers Chart -->
             <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 10 Customers by Total Spend</h3>
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Top 10 Customers by Total Spend</h3>
                 <div class="h-64">
                     <canvas id="top-customers-chart"></canvas>
                 </div>
@@ -181,7 +217,7 @@
 
             <!-- Customer Distribution Chart -->
             <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Customer Distribution</h3>
+                <h3 class="text-lg font-semibold text-brand-dark mb-4">Customer Distribution</h3>
                 <div class="h-64">
                     <canvas id="customer-distribution-chart"></canvas>
                 </div>
@@ -191,7 +227,7 @@
         <!-- Customer Overview Table -->
         <div class="bg-white rounded-xl shadow-lg p-6 customer-card">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-semibold text-gray-900">Customer Overview</h3>
+                <h3 class="text-lg font-semibold text-brand-dark">Customer Overview</h3>
                 <div class="text-sm text-gray-600" id="customer-count">Showing 0 customers</div>
             </div>
 
@@ -216,7 +252,7 @@
 
             <!-- Loading State -->
             <div id="table-loading" class="text-center py-8">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
                 <p class="text-gray-600">Loading customer data...</p>
             </div>
 
@@ -235,7 +271,7 @@
             <div class="p-6">
                 <!-- Drawer Header -->
                 <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Customer Details</h2>
+                    <h2 class="text-2xl font-bold text-brand-dark">Customer Details</h2>
                     <button id="close-drawer" class="p-2 rounded-full hover:bg-gray-200">
                         <i data-lucide="x" class="h-6 w-6"></i>
                     </button>
@@ -245,7 +281,7 @@
                 <div id="customer-profile" class="space-y-6">
                     <!-- Loading State -->
                     <div id="profile-loading" class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red mx-auto mb-2"></div>
                         <p class="text-gray-600">Loading customer details...</p>
                     </div>
 
@@ -255,6 +291,67 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer id="contact" class="bg-brand-dark text-brand-light border-t border-gray-700 mt-auto">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="index.html" class="flex items-center gap-3 mb-4">
+                        <img src="https://dcbchicken.com/images/logo.png" alt="Delhi Chicken Brothers Logo" class="h-12 w-12">
+                        <span class="text-xl font-bold">Delhi Chicken Brothers</span>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        An authentic taste legacy from Delhi. Freshly prepared, rich in flavor, straight from our kitchen to your plate.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html#menu" class="text-gray-400 hover:text-brand-blue transition-colors">Menu</a></li>
+                        <li><a href="index.html#about" class="text-gray-400 hover:text-brand-blue transition-colors">About Us</a></li>
+                        <li><a href="contact-us.html" class="text-gray-400 hover:text-brand-blue transition-colors">Contact</a></li>
+                        <li><a href="order-history.html" class="text-gray-400 hover:text-brand-blue transition-colors">My Orders</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="terms-and-conditions.html" class="text-gray-400 hover:text-brand-blue transition-colors">Terms & Conditions</a></li>
+                        <li><a href="privacy-policy.html" class="text-gray-400 hover:text-brand-blue transition-colors">Privacy Policy</a></li>
+                        <li><a href="refund-cancellation-policy.html" class="text-gray-400 hover:text-brand-blue transition-colors">Refund & Cancellation</a></li>
+                        <li><a href="delivery-policy.html" class="text-gray-400 hover:text-brand-blue transition-colors">Delivery Policy</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Us -->
+                <div>
+                    <h4 class="font-bold text-lg mb-4 tracking-wider">Contact Us</h4>
+                    <p class="text-gray-400 mb-2 text-sm">AAR City Regency Park Market</p>
+                        <p class="text-gray-400 text-sm">
+                            Call for orders: <a href="tel:9211022131" class="text-brand-blue font-semibold hover:underline">9211022131</a>
+                    </p>
+                    <div class="flex gap-4 mt-6">
+                        <a href="https://link.zomato.com/xqzv/rshare?id=11881452130563f13" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Zomato">
+                            <img src="https://dcbchicken.com/images/zomato.png" class="h-8" alt="Zomato">
+                        </a>
+                        <a href="https://www.swiggy.com/direct/brand/691868?source=swiggy-direct&subSource=google" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity" aria-label="Swiggy">
+                            <img src="https://dcbchicken.com/images/swiggy.png" class="h-8" alt="Swiggy">
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center">
+                <p class="text-sm text-gray-400">&copy; 2024 Delhi Chicken Brothers. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -322,7 +419,7 @@
             
             if (session) {
                 authContainer.innerHTML = `
-                    <button id="signout-button" class="bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                    <button id="signout-button" class="bg-brand-blue text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
                         Sign Out
                     </button>
                 `;
@@ -332,7 +429,7 @@
                 });
             } else {
                 authContainer.innerHTML = `
-                    <a href="auth.html" class="bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
+                    <a href="auth.html" class="bg-brand-blue text-white text-sm font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-all">
                         Sign In
                     </a>
                 `;
@@ -542,7 +639,7 @@
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
+                            <div class="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
                                 ${(customer.first_name?.charAt(0) || '') + (customer.last_name?.charAt(0) || '') || 'C'}
                             </div>
                             <div>
@@ -631,8 +728,8 @@
                     datasets: [{
                         label: 'Total Spent (₹)',
                         data: data,
-                        backgroundColor: '#3B82F6',
-                        borderColor: '#2563EB',
+                        backgroundColor: '#D12727',
+                        borderColor: '#a81f1f',
                         borderWidth: 1
                     }]
                 },
@@ -769,15 +866,15 @@
         function renderCustomerProfile(customer, orders, customerOrderItems) {
             const badge = getCustomerBadge(customer.type);
             
-                customerProfile.innerHTML = `
+            customerProfile.innerHTML = `
                 <!-- Personal Details -->
                 <div class="bg-gray-50 rounded-lg p-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                        <div class="w-16 h-16 bg-brand-blue rounded-full flex items-center justify-center text-white text-xl font-bold">
                             ${(customer.first_name?.charAt(0) || '') + (customer.last_name?.charAt(0) || '') || 'C'}
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-900">
+                            <h3 class="text-xl font-bold text-brand-dark">
                                 ${customer.first_name || ''} ${customer.last_name || ''}
                             </h3>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.class}">
@@ -809,19 +906,19 @@
                 <!-- Customer Stats -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                        <p class="text-2xl font-bold text-blue-600">${customer.totalOrders}</p>
+                        <p class="text-2xl font-bold text-brand-blue">${customer.totalOrders}</p>
                         <p class="text-sm text-gray-600">Total Orders</p>
                     </div>
                     <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                        <p class="text-2xl font-bold text-blue-600">₹${customer.totalSpent.toLocaleString('en-IN')}</p>
+                        <p class="text-2xl font-bold text-brand-blue">₹${customer.totalSpent.toLocaleString('en-IN')}</p>
                         <p class="text-sm text-gray-600">Total Spent</p>
                     </div>
                     <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                        <p class="text-2xl font-bold text-blue-600">₹${customer.avgOrderValue.toFixed(0)}</p>
+                        <p class="text-2xl font-bold text-brand-blue">₹${customer.avgOrderValue.toFixed(0)}</p>
                         <p class="text-sm text-gray-600">Avg Order Value</p>
                     </div>
                     <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                        <p class="text-2xl font-bold text-blue-600">${customer.preferredPayment}</p>
+                        <p class="text-2xl font-bold text-brand-blue">${customer.preferredPayment}</p>
                         <p class="text-sm text-gray-600">Preferred Payment</p>
                     </div>
                 </div>
@@ -870,7 +967,7 @@
 
                 <!-- Order History -->
                 <div>
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Order History</h4>
+                    <h4 class="text-lg font-semibold text-brand-dark mb-4">Order History</h4>
                     ${orders.length > 0 ? `
                         <div class="space-y-4">
                             ${orders.slice(0, 10).map(order => {
@@ -883,7 +980,7 @@
                                                 <p class="text-sm text-gray-600">${formatDateTime(order.created_at)}</p>
                                             </div>
                         <div class="text-right">
-                        <p class="font-bold text-blue-600">₹${order.grand_total}</p>
+                            <p class="font-bold text-brand-blue">₹${order.grand_total}</p>
                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                                                     order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
                                                     order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -917,7 +1014,7 @@
 
                 <!-- Future Features Placeholder -->
                 <div class="border-t pt-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Customer Management</h4>
+                    <h4 class="text-lg font-semibold text-brand-dark mb-4">Customer Management</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <button class="bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                             <i data-lucide="message-circle" class="h-4 w-4 inline mr-2"></i>

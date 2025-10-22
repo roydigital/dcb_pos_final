@@ -452,10 +452,12 @@
             const totalSales = filteredOrders.reduce((sum, order) => sum + order.grand_total, 0);
             const totalOrders = filteredOrders.length;
             const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+            const totalItems = filteredOrderItems.reduce((sum, item) => sum + item.quantity, 0);
             
             document.getElementById('total-sales').textContent = `₹${totalSales.toLocaleString('en-IN')}`;
             document.getElementById('total-orders').textContent = totalOrders.toLocaleString('en-IN');
             document.getElementById('avg-order-value').textContent = `₹${avgOrderValue.toFixed(2)}`;
+            document.getElementById('total-items').textContent = totalItems.toLocaleString('en-IN');
         }
 
         function updateCharts() {

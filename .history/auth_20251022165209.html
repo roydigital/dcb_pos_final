@@ -196,9 +196,7 @@
             const redirectTo = fromCart ? 'index.html?cart=open' : 'index.html';
             
             // Use current origin for redirect URL instead of hardcoded domain
-            const redirectUrl = `${window.location.origin}/${redirectTo.startsWith('/') ? redirectTo.substring(1) : redirectTo}`;
-
-            console.log('Attempting Google Sign-In with redirect URL:', redirectUrl);
+            const redirectUrl = `https://dcbchicken.com/${redirectTo.startsWith('/') ? redirectTo.substring(1) : redirectTo}`;
 
             const { data, error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
@@ -208,10 +206,10 @@
             });
 
             if (error) {
-                console.error('Google OAuth Error:', error);
                 alert('Error signing in with Google: ' + error.message);
             } else {
-                console.log('Google OAuth initiated successfully, data:', data);
+                // The OAuth flow will redirect the user, so we don't need to do anything here
+                console.log('Google OAuth initiated successfully');
             }
         });
 

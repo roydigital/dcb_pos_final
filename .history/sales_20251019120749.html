@@ -129,6 +129,48 @@
                     </div>
                 </div>
             </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-orange-600">📊</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Items Sold</p>
+                        <p id="total-items" class="text-xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <span class="text-red-600">💸</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Total Profit</p>
+                        <p id="total-profit" class="text-xl font-bold text-gray-900">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <span class="text-yellow-600">📈</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-600">Profit Margin</p>
+                        <p id="profit-margin" class="text-xl font-bold text-gray-900">0%</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Payment Method Breakdown -->
@@ -452,10 +494,12 @@
             const totalSales = filteredOrders.reduce((sum, order) => sum + order.grand_total, 0);
             const totalOrders = filteredOrders.length;
             const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+            const totalItems = filteredOrderItems.reduce((sum, item) => sum + item.quantity, 0);
             
             document.getElementById('total-sales').textContent = `₹${totalSales.toLocaleString('en-IN')}`;
             document.getElementById('total-orders').textContent = totalOrders.toLocaleString('en-IN');
             document.getElementById('avg-order-value').textContent = `₹${avgOrderValue.toFixed(2)}`;
+            document.getElementById('total-items').textContent = totalItems.toLocaleString('en-IN');
         }
 
         function updateCharts() {
