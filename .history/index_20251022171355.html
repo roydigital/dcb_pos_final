@@ -1098,7 +1098,12 @@
                     alert("Error: No payment method is selected!");
                     return;
                 }
+                    alert("Error: No payment method is selected!");
+                    return;
+                }
                 const paymentMode = paymentModeInput.value;
+                alert("DEBUG: Payment mode is: '" + paymentMode + "'"); 
+                // --- END OF FIX #1 ---
 
                 const checkoutBtn = document.getElementById('proceedCheckout');
 
