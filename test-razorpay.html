@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Razorpay Integration</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <h1>Test Razorpay Integration</h1>
+    <button id="test-button">Test Create Order</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('test-button').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Test the create-order endpoint
+                const response = await fetch('http://localhost:8081/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: 10000 }) // ₹100 in paise
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const orderData = await response.json();
+                resultDiv.innerHTML = `✅ Success! Order created: ${JSON.stringify(orderData)}`;
+                
+                // Now test opening Razorpay modal
+                const options = {
+                    key: orderData.key,
+                    amount: orderData.amount,
+                    currency: "INR",
+                    name: "Delhi Chicken Brothers",
+                    description: "Test Payment",
+                    order_id: orderData.orderId,
+                    handler: function (response) {
+                        resultDiv.innerHTML += `<br>✅ Payment successful: ${JSON.stringify(response)}`;
+                    },
+                    prefill: {
+                        name: "Test Customer",
+                        email: "test@example.com",
+                    },
+                    theme: {
+                        color: "#D12727"
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            resultDiv.innerHTML += '<br>❌ Payment modal dismissed';
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                console.error('Test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
