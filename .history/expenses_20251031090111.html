@@ -1019,33 +1019,30 @@
                         calculatedAmount = quantity * unitPrice;
                     }
 
-                    // Get description from form data
-                    const description = formData.get('expense-description') || expenseTitle;
-
                     const expenseData = {
                         expense_date: expenseDate,
                         expense_time: expenseTime,
                         category: category,
                         subcategory: formData.get('expense-subcategory') || null,
                         expense_title: expenseTitle,
-                        description: description,
+                        description: formData.get('expense-description') || null,
                         quantity: quantity,
                         unit_price: unitPrice,
                         amount: calculatedAmount,
                         gst_amount: parseFloat(formData.get('expense-gst')) || 0,
-                        total_amount: totalAmount,
+                        total_amount: calculatedAmount + (parseFloat(formData.get('expense-gst')) || 0),
                         payment_method: paymentMethod,
                         vendor_name: formData.get('expense-vendor') || null,
                         reference_number: formData.get('expense-reference') || null,
                         notes: formData.get('expense-notes') || null,
-                        is_raw_material: document.getElementById('inventory-item').value ? true : false,
-                        inventory_item_id: document.getElementById('inventory-item').value || null,
-                        quantity_used: document.getElementById('quantity-used').value ? parseFloat(document.getElementById('quantity-used').value) : null,
-                        unit: document.getElementById('quantity-unit').value || null,
+                        is_raw_material: formData.get('inventory-item') ? true : false,
+                        inventory_item_id: formData.get('inventory-item') || null,
+                        quantity_used: formData.get('quantity-used') ? parseFloat(formData.get('quantity-used')) : null,
+                        unit: formData.get('quantity-unit') || null,
                         created_by: null // Set to null for now, can be updated later with user authentication
                     };
 
-                    const expenseId = document.getElementById('expense-id').value;
+                    const expenseId = formData.get('expense-id');
 
                     let result;
                     if (expenseId) {
@@ -1084,7 +1081,7 @@
 
                 } catch (error) {
                     console.error('Error saving expense:', error);
-                    showNotification('Error saving expense: ' + error.message, 'error');
+                    showNotification('Error saving expense', 'error');
                 }
             }
 
@@ -1284,44 +1281,6 @@
                 const field = e.target;
                 field.classList.remove('border-red-500');
                 field.classList.add('border-gray-300');
-            }
-
-            // Auto-calculate amount from quantity and unit price
-            document.getElementById('expense-quantity').addEventListener('input', calculateAmountFromQuantity);
-            document.getElementById('expense-unit-price').addEventListener('input', calculateAmountFromQuantity);
-            
-            // Auto-calculate total amount
-            document.getElementById('expense-amount').addEventListener('input', updateTotalAmount);
-            document.getElementById('expense-gst').addEventListener('input', updateTotalAmount);
-
-            function calculateAmountFromQuantity() {
-                const quantity = parseFloat(document.getElementById('expense-quantity').value) || 0;
-                const unitPrice = parseFloat(document.getElementById('expense-unit-price').value) || 0;
-                
-                if (quantity > 0 && unitPrice > 0) {
-                    const calculatedAmount = quantity * unitPrice;
-                    document.getElementById('expense-amount').value = calculatedAmount.toFixed(2);
-                    updateTotalAmount();
-                }
-            }
-
-            function updateTotalAmount() {
-                const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
-                const gst = parseFloat(document.getElementById('expense-gst').value) || 0;
-                document.getElementById('expense-total').value = (amount + gst).toFixed(2);
-            }
-
-            // Show/hide raw materials section based on category
-            document.getElementById('expense-category').addEventListener('change', function() {
-                const rawMaterialsSection = document.getElementById('raw-materials-section');
-                if (this.value === 'Raw Materials') {
-                    rawMaterialsSection.classList.remove('hidden');
-                } else {
-                    rawMaterialsSection.classList.add('hidden');
-                }
-            });
-
-            // Filter functionality
             filterToggle.addEventListener('click', () => {
                 filtersSection.classList.toggle('hidden');
             });

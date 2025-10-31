@@ -1086,9 +1086,6 @@
                     console.error('Error saving expense:', error);
                     showNotification('Error saving expense: ' + error.message, 'error');
                 }
-            }
-
-            // Update inventory stock
             async function updateInventory(itemId, quantity) {
                 try {
                     // Get current stock
