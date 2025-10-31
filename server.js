@@ -169,4 +169,5 @@ app.use('/uploads', express.static(uploadsDir));
 // Serve static files from the root directory
 app.use(express.static(path.join(__dirname)));
 
-app.listen(8083, () => console.log("✅ DCB Razorpay Server running on port 8083"));
+const PORT = process.env.PORT || 8083; // Use PORT from environment or default to 8083
+app.listen(PORT, () => console.log(`✅ DCB Razorpay Server running on port ${PORT}`));
