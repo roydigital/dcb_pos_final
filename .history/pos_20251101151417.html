@@ -1245,11 +1245,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error creating customer:', error);
             alert('Failed to create customer: ' + error.message);
         }
-    }
-
-    function selectCustomer(customer) {
-        selectedCustomer = customer;
-        selectedCustomerName.textContent = `${customer.first_name} ${customer.last_name || ''}`;
         selectedCustomerMobile.textContent = customer.mobile_number;
         selectedCustomerDiv.classList.remove('hidden');
         customerResults.classList.add('hidden');

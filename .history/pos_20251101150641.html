@@ -1206,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstName = nameParts[0];
             const lastName = nameParts.slice(1).join(' ') || '';
 
-            // Create customer directly in Supabase with demo values for required columns
+            // Create customer directly in Supabase
             const { data, error } = await supabaseClient
                 .from('customers')
                 .insert([
@@ -1215,11 +1215,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         last_name: lastName,
                         email: email || null,
                         mobile_number: mobileNumber,
-                        building_no: "Not Provided", // Demo value for required column
-                        area: "Not Provided", // Demo value for required column
-                        city: "Delhi", // Demo value for required column
-                        state: "Delhi", // Demo value for required column
-                        pin_code: "110001", // Demo value for required column
                         created_at: new Date().toISOString()
                     }
                 ])
@@ -1245,16 +1240,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error creating customer:', error);
             alert('Failed to create customer: ' + error.message);
         }
-    }
-
-    function selectCustomer(customer) {
-        selectedCustomer = customer;
-        selectedCustomerName.textContent = `${customer.first_name} ${customer.last_name || ''}`;
-        selectedCustomerMobile.textContent = customer.mobile_number;
-        selectedCustomerDiv.classList.remove('hidden');
-        customerResults.classList.add('hidden');
-        addCustomerSection.classList.add('hidden');
-        customerSearchInput.value = '';
     }
 
     function removeSelectedCustomer() {

@@ -1201,49 +1201,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Split full name into first and last name
-            const nameParts = fullName.split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ') || '';
+            const response = await fetch('/api/create-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    email: email || null,
+                    mobile_number: mobileNumber
+                })
+            });
 
-            // Create customer directly in Supabase with demo values for required columns
-            const { data, error } = await supabaseClient
-                .from('customers')
-                .insert([
-                    {
-                        first_name: firstName,
-                        last_name: lastName,
-                        email: email || null,
-                        mobile_number: mobileNumber,
-                        building_no: "Not Provided", // Demo value for required column
-                        area: "Not Provided", // Demo value for required column
-                        city: "Delhi", // Demo value for required column
-                        state: "Delhi", // Demo value for required column
-                        pin_code: "110001", // Demo value for required column
-                        created_at: new Date().toISOString()
-                    }
-                ])
-                .select();
-
-            if (error) {
-                // Check if it's a duplicate mobile number error
-                if (error.code === '23505') {
-                    alert('A customer with this mobile number already exists. Please use the search function to find the existing customer.');
-                    return;
-                }
-                throw error;
+            const result = await response.json();
+            
+            if (result.error) {
+                alert(result.error);
+                return;
             }
 
-            if (data && data.length > 0) {
-                alert('Customer added successfully!');
-                selectCustomer(data[0]);
-                addCustomerSection.classList.add('hidden');
-            } else {
-                throw new Error('No data returned after customer creation');
-            }
+            alert('Customer added successfully!');
+            selectCustomer(result.data);
+            addCustomerSection.classList.add('hidden');
         } catch (error) {
             console.error('Error creating customer:', error);
-            alert('Failed to create customer: ' + error.message);
+            alert('Failed to create customer');
         }
     }
 

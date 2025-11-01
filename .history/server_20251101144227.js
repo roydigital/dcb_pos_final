@@ -190,10 +190,8 @@ app.post("/api/search-customer", async (req, res) => {
 // ✅ Create Customer Endpoint (already exists but ensuring it's present)
 app.post("/api/create-customer", async (req, res) => {
   const { full_name, email, mobile_number } = req.body;
-  console.log("Received request to create customer:", { full_name, email, mobile_number });
 
   if (!full_name || !mobile_number) {
-    console.error("Validation failed: Full name and mobile number are required.");
     return res.status(400).json({ error: "Full name and mobile number are required" });
   }
 
@@ -202,8 +200,6 @@ app.post("/api/create-customer", async (req, res) => {
     const nameParts = full_name.trim().split(' ');
     const first_name = nameParts[0];
     const last_name = nameParts.slice(1).join(' ') || null;
-
-    console.log("Inserting into Supabase:", { first_name, last_name, email, mobile_number });
 
     const { data, error } = await supabase
       .from('customers')
@@ -218,12 +214,7 @@ app.post("/api/create-customer", async (req, res) => {
       .select()
       .single();
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-      throw error;
-    }
-
-    console.log("Supabase insert success, data:", data);
+    if (error) throw error;
 
     res.json({ 
       success: true, 
@@ -231,8 +222,8 @@ app.post("/api/create-customer", async (req, res) => {
       message: "Customer created successfully" 
     });
   } catch (error) {
-    console.error("Error creating customer:", error.message);
-    res.status(500).json({ error: "Failed to create customer", details: error.message });
+    console.error("Error creating customer:", error);
+    res.status(500).json({ error: "Failed to create customer" });
   }
 });
 
@@ -240,4 +231,3 @@ app.post("/api/create-customer", async (req, res) => {
 app.use(express.static(path.join(__dirname)));
 
 const PORT = process.env.PORT || 8083; // Use PORT from environment or default to 8083
-app.listen(PORT, () => console.log(`✅ DCB Razorpay Server running on port ${PORT}`));

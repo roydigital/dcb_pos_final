@@ -1124,30 +1124,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     removeCustomerBtn.addEventListener('click', removeSelectedCustomer);
 
-    // Add New Customer Elements
-    const addCustomerSection = document.getElementById('add-customer-section');
-    const createCustomerBtn = document.getElementById('create-customer-btn');
-    const cancelAddCustomerBtn = document.getElementById('cancel-add-customer');
-    const newCustName = document.getElementById('new-cust-name');
-    const newCustEmail = document.getElementById('new-cust-email');
-    const newCustMobile = document.getElementById('new-cust-mobile');
-
-    createCustomerBtn.addEventListener('click', createNewCustomer);
-    cancelAddCustomerBtn.addEventListener('click', cancelAddCustomer);
-
     async function searchCustomers() {
         const searchTerm = customerSearchInput.value.trim();
         if (!searchTerm) {
-            alert('Please enter a mobile number or email to search');
+            alert('Please enter a mobile number to search');
             return;
         }
 
         try {
-            // Search customers by mobile number or email
+            // Search customers by mobile number
             const { data: customers, error } = await supabaseClient
                 .from('customers')
                 .select('user_id, first_name, last_name, mobile_number, email')
-                .or(`mobile_number.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+                .ilike('mobile_number', `%${searchTerm}%`)
                 .limit(5);
 
             if (error) throw error;
@@ -1167,83 +1156,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     customerResults.appendChild(customerDiv);
                 });
                 customerResults.classList.remove('hidden');
-                addCustomerSection.classList.add('hidden');
             } else {
-                customerResults.classList.add('hidden');
-                showAddCustomerForm(searchTerm);
+                customerResults.innerHTML = '<p class="text-center text-gray-500 text-sm">No customers found</p>';
+                customerResults.classList.remove('hidden');
             }
         } catch (error) {
             console.error('Error searching customers:', error);
             alert('Error searching customers: ' + error.message);
-        }
-    }
-
-    function showAddCustomerForm(searchTerm) {
-        addCustomerSection.classList.remove('hidden');
-        newCustName.value = '';
-        newCustEmail.value = '';
-        newCustMobile.value = searchTerm || '';
-    }
-
-    function cancelAddCustomer() {
-        addCustomerSection.classList.add('hidden');
-        customerSearchInput.value = '';
-    }
-
-    async function createNewCustomer() {
-        const fullName = newCustName.value.trim();
-        const email = newCustEmail.value.trim();
-        const mobileNumber = newCustMobile.value.trim();
-
-        if (!fullName || !mobileNumber) {
-            alert('Please enter at least Name and Mobile Number');
-            return;
-        }
-
-        try {
-            // Split full name into first and last name
-            const nameParts = fullName.split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ') || '';
-
-            // Create customer directly in Supabase with demo values for required columns
-            const { data, error } = await supabaseClient
-                .from('customers')
-                .insert([
-                    {
-                        first_name: firstName,
-                        last_name: lastName,
-                        email: email || null,
-                        mobile_number: mobileNumber,
-                        building_no: "Not Provided", // Demo value for required column
-                        area: "Not Provided", // Demo value for required column
-                        city: "Delhi", // Demo value for required column
-                        state: "Delhi", // Demo value for required column
-                        pin_code: "110001", // Demo value for required column
-                        created_at: new Date().toISOString()
-                    }
-                ])
-                .select();
-
-            if (error) {
-                // Check if it's a duplicate mobile number error
-                if (error.code === '23505') {
-                    alert('A customer with this mobile number already exists. Please use the search function to find the existing customer.');
-                    return;
-                }
-                throw error;
-            }
-
-            if (data && data.length > 0) {
-                alert('Customer added successfully!');
-                selectCustomer(data[0]);
-                addCustomerSection.classList.add('hidden');
-            } else {
-                throw new Error('No data returned after customer creation');
-            }
-        } catch (error) {
-            console.error('Error creating customer:', error);
-            alert('Failed to create customer: ' + error.message);
         }
     }
 
@@ -1253,7 +1172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedCustomerMobile.textContent = customer.mobile_number;
         selectedCustomerDiv.classList.remove('hidden');
         customerResults.classList.add('hidden');
-        addCustomerSection.classList.add('hidden');
         customerSearchInput.value = '';
     }
 
@@ -2913,6 +2831,120 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("customer-search-input");
+  const searchBtn = document.getElementById("search-customer-btn");
+  const resultsDiv = document.getElementById("customer-results");
+  const selectedDiv = document.getElementById("selected-customer");
+  const selectedName = document.getElementById("selected-customer-name");
+  const selectedMobile = document.getElementById("selected-customer-mobile");
+  const removeBtn = document.getElementById("remove-customer-btn");
+  const addSection = document.getElementById("add-customer-section");
+  const createBtn = document.getElementById("create-customer-btn");
+  const cancelBtn = document.getElementById("cancel-add-customer");
 
-</body>
-</html>
+  let selectedCustomer = null;
+
+  // 🔍 Search existing customer
+  searchBtn.addEventListener("click", async () => {
+    const value = searchInput.value.trim();
+    if (!value) return alert("Please enter a mobile number or email");
+
+    try {
+      const res = await fetch("/api/search-customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobile_number: /^[0-9]{6,}$/.test(value) ? value : null,
+          email: /^[^@]+@[^@]+\.[^@]+$/.test(value) ? value : null
+        }),
+      });
+
+      const data = await res.json();
+      resultsDiv.innerHTML = "";
+
+      if (data.exists && data.customers.length > 0) {
+        resultsDiv.classList.remove("hidden");
+        addSection.classList.add("hidden");
+
+        data.customers.forEach(cust => {
+          const btn = document.createElement("button");
+          btn.className = "w-full text-left p-2 rounded-md hover:bg-blue-50 border-b border-gray-200";
+          btn.innerHTML = `<strong>${cust.first_name} ${cust.last_name || ""}</strong><br>
+                           <small>${cust.mobile_number} | ${cust.email || "No Email"}</small>`;
+          btn.addEventListener("click", () => assignCustomer(cust));
+          resultsDiv.appendChild(btn);
+        });
+      } else {
+        resultsDiv.classList.add("hidden");
+        showAddCustomerForm(value);
+      }
+    } catch (err) {
+      console.error("Error searching customer:", err);
+      alert("Failed to search customer");
+    }
+  });
+
+  // ➕ Show Add New Customer Form
+  function showAddCustomerForm(mobile) {
+    addSection.classList.remove("hidden");
+    resultsDiv.classList.add("hidden");
+    document.getElementById("new-cust-name").value = "";
+    document.getElementById("new-cust-email").value = "";
+    document.getElementById("new-cust-mobile").value = mobile || "";
+  }
+
+  cancelBtn.addEventListener("click", () => {
+    addSection.classList.add("hidden");
+    searchInput.value = "";
+  });
+
+  // 🧾 Create new customer
+  createBtn.addEventListener("click", async () => {
+    const full_name = document.getElementById("new-cust-name").value.trim();
+    const email = document.getElementById("new-cust-email").value.trim();
+    const mobile_number = document.getElementById("new-cust-mobile").value.trim();
+
+    if (!full_name || !mobile_number) {
+      return alert("Please enter at least Name and Mobile Number");
+    }
+
+    try {
+      const res = await fetch("/api/create-customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name, email, mobile_number }),
+      });
+
+      const result = await res.json();
+      if (result.error) return alert(result.error);
+
+      alert("Customer added successfully!");
+      assignCustomer(result.data);
+      addSection.classList.add("hidden");
+    } catch (err) {
+      console.error("Error adding customer:", err);
+      alert("Failed to add customer");
+    }
+  });
+
+  // ✅ Assign selected customer
+  function assignCustomer(cust) {
+    selectedCustomer = cust;
+    selectedName.textContent = `${cust.first_name} ${cust.last_name || ""}`;
+    selectedMobile.textContent = cust.mobile_number;
+    selectedDiv.classList.remove("hidden");
+    resultsDiv.classList.add("hidden");
+    addSection.classList.add("hidden");
+  }
+
+  // ❌ Remove assigned customer
+  removeBtn.addEventListener("click", () => {
+    selectedCustomer = null;
+    selectedDiv.classList.add("hidden");
+    searchInput.value = "";
+  });
+});
+</script>
+
