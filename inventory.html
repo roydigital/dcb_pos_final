@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhi Chicken Brothers - Inventory Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .low-stock {
+            background-color: #fef2f2 !important;
+            border-left: 4px solid #dc2626;
+        }
+        .out-of-stock {
+            background-color: #fee2e2 !important;
+            border-left: 4px solid #b91c1c;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Inventory Management</h1>
+                    <p class="text-gray-500">Delhi Chicken Brothers</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.location.href='pos.html'" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Back to POS
+                    </button>
+                    <button id="refresh-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 overflow-x-auto">
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="dashboard">
+                    Dashboard
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="inventory">
+                    Inventory List
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="add-item">
+                    Add New Item
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="stock-in">
+                    Stock In
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="stock-out">
+                    Stock Out
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap font-medium text-sm" data-tab="reports">
+                    Reports
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <!-- Total Stock Value Card -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">₹</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Total Stock Value</p>
+                            <p id="total-stock-value" class="text-2xl font-semibold text-gray-900">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Usage Cost -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">₹</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Today's Usage Cost</p>
+                            <p id="today-usage-cost" class="text-2xl font-semibold text-gray-900">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- This Week's Usage Cost -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">₹</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">This Week's Usage Cost</p>
+                            <p id="week-usage-cost" class="text-2xl font-semibold text-gray-900">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Items -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">!</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Low Stock Items</p>
+                            <p id="low-stock-count" class="text-2xl font-semibold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wastage Cost -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">₹</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Wastage Cost</p>
+                            <p id="wastage-cost" class="text-2xl font-semibold text-gray-900">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COGS -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">₹</span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">COGS (Today)</p>
+                            <p id="cogs-today" class="text-2xl font-semibold text-gray-900">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Consumed Ingredients -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Top 5 Consumed Ingredients Today</h3>
+                </div>
+                <div class="p-6">
+                    <div id="top-ingredients-list" class="space-y-3">
+                        <p class="text-gray-500 text-center">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory List Tab -->
+        <div id="inventory" class="tab-content">
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                        <h3 class="text-lg font-medium text-gray-900">Inventory Items</h3>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                            <input type="text" id="search-inventory" placeholder="Search items..." class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select id="filter-unit" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Units</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="l">l</option>
+                                <option value="ml">ml</option>
+                                <option value="pcs">pcs</option>
+                            </select>
+                            <select id="filter-stock" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">All Stock</option>
+                                <option value="low">Low Stock</option>
+                                <option value="normal">Normal Stock</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost/Unit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Inventory items will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Item Tab -->
+        <div id="add-item" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+                <h3 class="text-lg font-medium text-gray-900 mb-6">Add New Inventory Item</h3>
+                <form id="add-item-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name *</label>
+                            <input type="text" id="item-name" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="item-unit" class="block text-sm font-medium text-gray-700">Unit *</label>
+                            <select id="item-unit" name="unit" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Unit</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="l">l</option>
+                                <option value="ml">ml</option>
+                                <option value="pcs">pcs</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="item-stock" class="block text-sm font-medium text-gray-700">Initial Stock</label>
+                            <input type="number" id="item-stock" name="stock" step="0.01" min="0" value="0" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="item-min-stock" class="block text-sm font-medium text-gray-700">Minimum Stock *</label>
+                            <input type="number" id="item-min-stock" name="minimum_stock" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="item-cost" class="block text-sm font-medium text-gray-700">Cost Per Unit (₹) *</label>
+                            <input type="number" id="item-cost" name="cost_per_unit" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="item-supplier" class="block text-sm font-medium text-gray-700">Supplier Info</label>
+                            <input type="text" id="item-supplier" name="supplier_info" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="reset" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                            Clear
+                        </button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            Add Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stock In Tab -->
+        <div id="stock-in" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+                <h3 class="text-lg font-medium text-gray-900 mb-6">Stock In - Purchase</h3>
+                <form id="stock-in-form" class="space-y-4">
+                    <div>
+                        <label for="purchase-ingredient" class="block text-sm font-medium text-gray-700">Ingredient *</label>
+                        <select id="purchase-ingredient" name="ingredient_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Ingredient</option>
+                            <!-- Ingredients will be populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="purchase-quantity" class="block text-sm font-medium text-gray-700">Quantity Purchased *</label>
+                            <input type="number" id="purchase-quantity" name="quantity" step="0.01" min="0.01" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="purchase-cost" class="block text-sm font-medium text-gray-700">Cost Per Unit (₹) *</label>
+                            <input type="number" id="purchase-cost" name="cost_per_unit" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="purchase-supplier" class="block text-sm font-medium text-gray-700">Supplier *</label>
+                            <input type="text" id="purchase-supplier" name="supplier" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="purchase-notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                            <input type="text" id="purchase-notes" name="notes" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="reset" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                            Clear
+                        </button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                            Add Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stock Out Tab -->
+        <div id="stock-out" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+                <h3 class="text-lg font-medium text-gray-900 mb-6">Stock Out - Usage</h3>
+                <form id="stock-out-form" class="space-y-4">
+                    <div>
+                        <label for="usage-ingredient" class="block text-sm font-medium text-gray-700">Ingredient *</label>
+                        <select id="usage-ingredient" name="ingredient_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Ingredient</option>
+                            <!-- Ingredients will be populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="usage-quantity" class="block text-sm font-medium text-gray-700">Quantity Used *</label>
+                            <input type="number" id="usage-quantity" name="quantity" step="0.01" min="0.01" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="usage-type" class="block text-sm font-medium text-gray-700">Usage Type *</label>
+                            <select id="usage-type" name="usage_type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="sales">Sales</option>
+                                <option value="wastage">Wastage</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="order-id-section" class="hidden">
+                        <label for="usage-order-id" class="block text-sm font-medium text-gray-700">Order ID</label>
+                        <input type="text" id="usage-order-id" name="order_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter order ID for sales">
+                    </div>
+
+                    <div>
+                        <label for="usage-notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="usage-notes" name="notes" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="reset" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                            Clear
+                        </button>
+                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                            Use Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                        <h3 class="text-lg font-medium text-gray-900">Inventory Reports</h3>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                            <select id="report-period" class="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="last7">Last 7 Days</option>
+                                <option value="last30">Last 30 Days</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                            <div id="custom-date-range" class="hidden space-x-2">
+                                <input type="date" id="report-start-date" class="px-3 py-2 border border-gray-300 rounded-md">
+                                <input type="date" id="report-end-date" class="px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <button id="generate-report" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                                Generate Report
+                            </button>
+                            <button id="export-csv" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-sm font-medium text-blue-800">Total Stock In</p>
+                            <p id="report-stock-in-qty" class="text-2xl font-bold text-blue-900">0</p>
+                            <p id="report-stock-in-value" class="text-sm text-blue-700">₹0.00</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-sm font-medium text-green-800">Total Stock Out</p>
+                            <p id="report-stock-out-qty" class="text-2xl font-bold text-green-900">0</p>
+                            <p id="report-stock-out-value" class="text-sm text-green-700">₹0.00</p>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4">
+                            <p class="text-sm font-medium text-yellow-800">Wastage</p>
+                            <p id="report-wastage-qty" class="text-2xl font-bold text-yellow-900">0</p>
+                            <p id="report-wastage-value" class="text-sm text-yellow-700">₹0.00</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <p class="text-sm font-medium text-purple-800">COGS</p>
+                            <p id="report-cogs" class="text-2xl font-bold text-purple-900">₹0.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Item-wise Usage -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-medium text-gray-900 mb-4">Item-wise Usage Summary</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock In</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Out</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wastage</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="item-usage-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Item usage data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Wastage Breakdown -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-900 mb-4">Wastage Breakdown</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Wasted</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wastage-breakdown-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Wastage data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center space-x-2">
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="edit-item-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-4">Edit Inventory Item</h3>
+                <form id="edit-item-form" class="space-y-4">
+                    <input type="hidden" id="edit-item-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
+                            <input type="text" id="edit-item-name" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-item-unit" class="block text-sm font-medium text-gray-700">Unit</label>
+                            <select id="edit-item-unit" name="unit" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="l">l</option>
+                                <option value="ml">ml</option>
+                                <option value="pcs">pcs</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-item-stock" class="block text-sm font-medium text-gray-700">Current Stock</label>
+                            <input type="number" id="edit-item-stock" name="stock" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-item-min-stock" class="block text-sm font-medium text-gray-700">Minimum Stock</label>
+                            <input type="number" id="edit-item-min-stock" name="minimum_stock" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-item-cost" class="block text-sm font-medium text-gray-700">Cost Per Unit (₹)</label>
+                            <input type="number" id="edit-item-cost" name="cost_per_unit" step="0.01" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-item-supplier" class="block text-sm font-medium text-gray-700">Supplier Info</label>
+                            <input type="text" id="edit-item-supplier" name="supplier_info" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" id="cancel-edit-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            Update Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/inventory.js"></script>
+</body>
+</html>

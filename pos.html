@@ -1283,8 +1283,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.floor(timestamp / 1000); // Use seconds since epoch as order number
     }
     
+    // Enhanced Supabase API call with timeout and retry logic
+    async function supabaseCallWithRetry(operation, maxRetries = 3, timeoutMs = 10000) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Create a timeout promise
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs);
+                });
+
+                // Race between the operation and timeout
+                const result = await Promise.race([operation(), timeoutPromise]);
+                return result;
+            } catch (error) {
+                console.warn(`Supabase call attempt ${attempt} failed:`, error);
+                
+                if (attempt === maxRetries) {
+                    throw error; // Final attempt failed
+                }
+                
+                // Wait before retry (exponential backoff)
+                const backoffTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                console.log(`Retrying in ${backoffTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoffTime));
+            }
+        }
+    }
+
     async function finalizeOrder() {
+        const finalizeBtn = document.getElementById('finalize-order-btn');
+        const originalText = finalizeBtn.textContent;
+        
         try {
+            // Disable button and show loading state
+            finalizeBtn.disabled = true;
+            finalizeBtn.innerHTML = `<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Processing...`;
+
             // Get payment mode and order type
             const paymentMode = document.querySelector('input[name="payment-mode"]:checked').value;
             const orderType = document.querySelector('input[name="order-type"]:checked').value;
@@ -1296,61 +1330,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // For Cash payments, proceed with the existing flow
-            // 1. Check inventory availability and record usage
-            const inventoryUsage = [];
-            let hasLowStockItems = false;
-            let lowStockMessage = '';
-
-            currentOrder.forEach(orderItem => {
-                const menuItem = Object.values(menu).flat().find(m => m.name === orderItem.name);
-                if (menuItem && menuItem.recipe && menuItem.recipe[orderItem.variant]) {
-                    const recipeForVariant = menuItem.recipe[orderItem.variant];
-                    recipeForVariant.forEach(recipeIngredient => {
-                        const inventoryItem = inventory.find(i => i.name === recipeIngredient.ingredient);
-                        if (inventoryItem) {
-                            const quantityUsed = recipeIngredient.quantity * orderItem.qty;
-                            inventoryItem.stock -= quantityUsed;
-                            
-                            // Check for low stock
-                            if (inventoryItem.stock <= inventoryItem.minimum_stock) {
-                                hasLowStockItems = true;
-                                lowStockMessage += `${inventoryItem.name} is running low (${inventoryItem.stock} ${inventoryItem.unit} left). `;
-                            }
-
-                            // Record inventory usage for reporting
-                            inventoryUsage.push({
-                                ingredient_id: inventoryItem.id,
-                                quantity_used: quantityUsed,
-                                cost_incurred: quantityUsed * (inventoryItem.cost_per_unit || 0)
-                            });
-                        }
-                    });
-                }
-            });
-
-            // Update inventory in Supabase
-            await updateInventoryInSupabase();
-            
-            // Show low stock alert if needed
-            if (hasLowStockItems) {
-                setTimeout(() => {
-                    alert(`Low Stock Alert: ${lowStockMessage}`);
-                }, 1000);
-            }
-
-            // 2. Calculate totals with discount
+            // 1. Calculate totals first
             const subtotal = currentOrder.reduce((acc, item) => acc + (item.price * item.qty), 0);
             const discount = calculateDiscount(subtotal);
             const grandTotal = subtotal - discount;
 
-            // 3. Save order to Supabase database
-            // Insert main order record with customer assignment if selected
+            // 2. Save order to Supabase database FIRST (simplified approach)
             const orderData = {
                 grand_total: grandTotal,
                 payment_mode: paymentMode,
                 order_type: orderType,
                 note: orderNote,
-                status: 'Pending', // Set initial status as Pending (with capital P to match enum)
+                status: 'Pending',
                 discount_amount: discount
             };
             
@@ -1364,6 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 orderData.coupon_code = appliedCoupon.coupon_code;
             }
 
+            // Use direct call without retry logic for faster response
             const { data: order, error: orderError } = await supabaseClient
                 .from('orders')
                 .insert([orderData])
@@ -1374,7 +1366,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to save order: ${orderError.message}`);
             }
 
-            // Insert order items
+            // 3. Insert order items (simplified approach)
             const orderItems = currentOrder.map(item => ({
                 order_id: order.id,
                 item_name: item.name,
@@ -1391,24 +1383,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to save order items: ${itemsError.message}`);
             }
 
-            // 4. Record coupon usage if applied
+            // 4. Update inventory AFTER order is created (non-blocking)
+            updateInventoryAfterOrder().catch(error => {
+                console.error('Inventory update failed:', error);
+                // Don't block the order flow for inventory issues
+            });
+
+            // 5. Record coupon usage if applied (non-blocking)
             if (appliedCoupon && selectedCustomer) {
-                const { error: couponUsageError } = await supabaseClient
+                supabaseClient
                     .from('coupon_usage')
                     .insert({
                         coupon_id: appliedCoupon.id,
                         order_id: order.id,
                         customer_id: selectedCustomer.user_id,
                         discount_amount: discount
+                    })
+                    .catch(error => {
+                        console.error('Coupon usage recording failed:', error);
+                        // Don't block the order flow for coupon usage issues
                     });
-
-                if (couponUsageError) {
-                    console.error('Error recording coupon usage:', couponUsageError);
-                    // Don't throw error here as the order was already created successfully
-                }
             }
 
-            // 5. Prepare for printing
+            // 6. Prepare for printing immediately
             document.getElementById('final-order-number').textContent = `Order #${order.id}`;
             prepareReceipt(order.id, paymentMode, orderType);
             prepareKOT(order.id, paymentMode, orderType);
@@ -1416,7 +1413,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error finalizing order:', error);
-            alert(`Error finalizing order: ${error.message}. Please try again.`);
+            
+            // Provide more specific error messages
+            let userMessage = `Error finalizing order: ${error.message}`;
+            
+            if (error.message.includes('Failed to fetch') || error.message.includes('timed out')) {
+                userMessage = 'Network connection issue. Please check your internet connection and try again.';
+            } else if (error.message.includes('JWT')) {
+                userMessage = 'Authentication error. Please refresh the page and try again.';
+            } else if (error.message.includes('database')) {
+                userMessage = 'Database connection issue. Please try again in a moment.';
+            } else if (error.message.includes('orders_status_check')) {
+                userMessage = 'Order status constraint violation. Please contact support.';
+            }
+            
+            alert(userMessage);
+        } finally {
+            // Always restore button state
+            finalizeBtn.disabled = false;
+            finalizeBtn.textContent = originalText;
+        }
+    }
+
+    // Separate function for inventory updates (non-blocking)
+    async function updateInventoryAfterOrder() {
+        try {
+            const inventoryUpdates = [];
+            
+            currentOrder.forEach(orderItem => {
+                const menuItem = Object.values(menu).flat().find(m => m.name === orderItem.name);
+                if (menuItem && menuItem.recipe && menuItem.recipe[orderItem.variant]) {
+                    const recipeForVariant = menuItem.recipe[orderItem.variant];
+                    recipeForVariant.forEach(recipeIngredient => {
+                        const inventoryItem = inventory.find(i => i.name === recipeIngredient.ingredient);
+                        if (inventoryItem) {
+                            const quantityUsed = recipeIngredient.quantity * orderItem.qty;
+                            inventoryItem.stock -= quantityUsed;
+                            
+                            // Record inventory update
+                            if (inventoryItem.id) {
+                                inventoryUpdates.push({
+                                    id: inventoryItem.id,
+                                    stock: inventoryItem.stock
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Batch update inventory
+            if (inventoryUpdates.length > 0) {
+                for (const update of inventoryUpdates) {
+                    const { error } = await supabaseClient
+                        .from('inventory')
+                        .update({ stock: update.stock })
+                        .eq('id', update.id);
+                    
+                    if (error) {
+                        console.error(`Failed to update inventory item ${update.id}:`, error);
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error in inventory update:', error);
+            // Don't throw - this is a non-blocking operation
         }
     }
 
@@ -2209,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchCouponsFromSupabase() {
         try {
             console.log("Fetching coupons from API...");
-            const response = await fetch('http://localhost:8081/api/coupons');
+            const response = await fetch('/api/coupons');
             
             if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}`);
@@ -2710,7 +2772,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // 1. Create a Razorpay order from your backend
-            const orderResponse = await fetch("https://dcbchicken.com:8081/create-order", {
+            const orderResponse = await fetch("/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ amount: totalAmount }),
@@ -2732,7 +2794,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 order_id: orderData.orderId,
                 handler: async function (response) {
                     // 2. Verify the payment on your backend
-                    const verificationResponse = await fetch("https://dcbchicken.com:8081/verify-payment", {
+                    const verificationResponse = await fetch("/verify-payment", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(response),
@@ -2907,9 +2969,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Connection Test Function ---
+    async function testSupabaseConnection() {
+        try {
+            console.log('Testing Supabase connection...');
+            const { data, error } = await supabaseClient
+                .from('menu_items')
+                .select('count')
+                .limit(1);
+            
+            if (error) {
+                console.error('Supabase connection test failed:', error);
+                return false;
+            }
+            
+            console.log('Supabase connection test successful');
+            return true;
+        } catch (error) {
+            console.error('Supabase connection test error:', error);
+            return false;
+        }
+    }
+
     // --- Initial calls ---
     loadDataFromSupabase();
     updateFinalizeButtonState();
+    
+    // Test connection on startup
+    setTimeout(async () => {
+        const isConnected = await testSupabaseConnection();
+        if (!isConnected) {
+            console.warn('Supabase connection test failed on startup. Some features may not work properly.');
+        }
+    }, 2000);
 });
 </script>
 
